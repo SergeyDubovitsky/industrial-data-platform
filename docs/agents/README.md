@@ -12,6 +12,20 @@ the root `AGENTS.md` and should stay short enough to be useful in a fresh clone.
 4. For large tasks, use `workflows/task-flow.md` and the role prompts
    in `roles/`.
 
+## How To Run Agents
+
+- Codex: start from the repository root when possible, state the module owner,
+  write scope, forbidden identifiers, and validation command in the prompt. For
+  scoped work, tell Codex to read the nearest scoped `AGENTS.md`.
+- Claude Code: `CLAUDE.md` imports the root `AGENTS.md`; still name the scoped
+  `AGENTS.md` and module-map entry that apply to the task.
+- GitHub Copilot: use `.github/copilot-instructions.md` plus `AGENTS.md`; check
+  Copilot response references when repository instructions should apply.
+- Parallel agents: split write scopes clearly, for example contracts/docs,
+  code/tests, and read-only review. Do not give two agents the same write scope.
+- Skills: use repo-scoped skills for repeated high-risk workflows; do not use
+  them as a replacement for `AGENTS.md`.
+
 ## What Belongs Here
 
 - Stable workflow and handoff instructions.
