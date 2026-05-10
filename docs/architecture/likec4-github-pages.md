@@ -7,13 +7,13 @@
 
 - Pages source: custom GitHub Actions workflow
 - deploy branch: `main`
-- base path для LikeC4 build: `/wm/`
+- base path для LikeC4 build: `/industrial-data-platform/`
 - build output: `arch/dist`
 
 ## Публичный URL
 
-Для текущего репозитория `SergeyDubovitsky/wm` ожидаемый URL:
-[https://sergeydubovitsky.github.io/wm/](https://sergeydubovitsky.github.io/wm/).
+Для текущего репозитория `SergeyDubovitsky/industrial-data-platform` ожидаемый URL:
+[https://sergeydubovitsky.github.io/industrial-data-platform/](https://sergeydubovitsky.github.io/industrial-data-platform/).
 
 ## Локальная проверка
 
@@ -21,11 +21,12 @@
 
 ```bash
 npm run validate
-npm run build -- --base /wm/
+npm run build -- --base /industrial-data-platform/
 ```
 
-Команда `build -- --base /wm/` воспроизводит project-site base path,
-который GitHub Pages использует для репозитория `wm`.
+Команда `build -- --base /industrial-data-platform/` воспроизводит project-site
+base path, который GitHub Pages использует для репозитория
+`industrial-data-platform`.
 
 ## Обновление публикации
 

@@ -4,13 +4,13 @@ requires-python = ">=3.12"
 
 [manifest]
 members = [
-    "web-monitoring",
-    "wm-clickhouse",
-    "wm-config-registry",
-    "wm-demo-stack",
-    "wm-edge-agent",
-    "wm-knx-demo",
-    "wm-knx-parser",
+    "edge-telemetry-agent",
+    "idp-config-registry",
+    "idp-demo-stack",
+    "idp-telemetry-store",
+    "industrial-data-platform",
+    "knx-demo",
+    "knx-project-parser",
 ]
 
 [[package]]
@@ -437,6 +437,31 @@ wheels = [
 ]
 
 [[package]]
+name = "edge-telemetry-agent"
+version = "0.1.0"
+source = { editable = "apps/edge_telemetry_agent" }
+dependencies = [
+    { name = "paho-mqtt" },
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "paho-mqtt", specifier = ">=2.1.0" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+
+[[package]]
 name = "fastapi"
 version = "0.136.1"
 source = { registry = "https://pypi.org/simple" }
@@ -566,6 +591,91 @@ wheels = [
 ]
 
 [[package]]
+name = "idp-config-registry"
+version = "0.1.0"
+source = { editable = "apps/idp_config_registry" }
+dependencies = [
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "confluent-kafka" },
+    { name = "fastapi" },
+    { name = "greenlet" },
+    { name = "jsonschema" },
+    { name = "pydantic" },
+    { name = "sqladmin" },
+    { name = "sqlalchemy" },
+    { name = "uvicorn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "alembic", specifier = ">=1.18.4" },
+    { name = "asyncpg", specifier = ">=0.31.0" },
+    { name = "confluent-kafka", specifier = ">=2.14.0" },
+    { name = "fastapi", specifier = ">=0.136.1" },
+    { name = "greenlet", specifier = ">=3.5.0" },
+    { name = "jsonschema", specifier = ">=4.26.0" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "sqladmin", specifier = ">=0.21.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.49" },
+    { name = "uvicorn", specifier = ">=0.46.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-asyncio", specifier = ">=1.3.0" },
+]
+
+[[package]]
+name = "idp-demo-stack"
+version = "0.1.0"
+source = { editable = "libs/idp_demo_stack" }
+dependencies = [
+    { name = "confluent-kafka" },
+    { name = "paho-mqtt" },
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "confluent-kafka", specifier = "==2.14.0" },
+    { name = "paho-mqtt", specifier = ">=2.1.0" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+
+[[package]]
+name = "idp-telemetry-store"
+version = "0.1.0"
+source = { editable = "tools/idp_telemetry_store" }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+
+[[package]]
 name = "ifaddr"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -573,6 +683,55 @@ sdist = { url = "https://files.pythonhosted.org/packages/e8/ac/fb4c578f4a3256561
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9c/1f/19ebc343cc71a7ffa78f17018535adc5cbdd87afb31d7c34874680148b32/ifaddr-0.2.0-py3-none-any.whl", hash = "sha256:085e0305cfe6f16ab12d72e2024030f5d52674afad6911bb1eee207177b8a748", size = 12314, upload-time = "2022-06-15T21:40:25.756Z" },
 ]
+
+[[package]]
+name = "industrial-data-platform"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "edge-telemetry-agent" },
+    { name = "idp-config-registry" },
+    { name = "idp-demo-stack" },
+    { name = "idp-telemetry-store" },
+    { name = "knx-demo" },
+    { name = "knx-project-parser" },
+]
+
+[package.dev-dependencies]
+coverage = [
+    { name = "coverage" },
+    { name = "genbadge", extra = ["coverage"] },
+]
+integration = [
+    { name = "paho-mqtt" },
+    { name = "pytest" },
+    { name = "pyyaml" },
+]
+lint = [
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "edge-telemetry-agent", editable = "apps/edge_telemetry_agent" },
+    { name = "idp-config-registry", editable = "apps/idp_config_registry" },
+    { name = "idp-demo-stack", editable = "libs/idp_demo_stack" },
+    { name = "idp-telemetry-store", editable = "tools/idp_telemetry_store" },
+    { name = "knx-demo", editable = "apps/knx_demo" },
+    { name = "knx-project-parser", editable = "libs/knx_project_parser" },
+]
+
+[package.metadata.requires-dev]
+coverage = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.13.5" },
+    { name = "genbadge", extras = ["coverage"], specifier = ">=1.1.3" },
+]
+integration = [
+    { name = "paho-mqtt", specifier = ">=2.1.0" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
+]
+lint = [{ name = "ruff", specifier = ">=0.15.8" }]
 
 [[package]]
 name = "iniconfig"
@@ -621,6 +780,44 @@ sdist = { url = "https://files.pythonhosted.org/packages/19/74/a633ee74eb36c44aa
 wheels = [
     { url = "https://files.pythonhosted.org/packages/41/45/1a4ed80516f02155c51f51e8cedb3c1902296743db0bbc66608a0db2814f/jsonschema_specifications-2025.9.1-py3-none-any.whl", hash = "sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe", size = 18437, upload-time = "2025-09-08T01:34:57.871Z" },
 ]
+
+[[package]]
+name = "knx-demo"
+version = "0.1.0"
+source = { editable = "apps/knx_demo" }
+dependencies = [
+    { name = "xknx" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "xknx", specifier = ">=3.15.0" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+
+[[package]]
+name = "knx-project-parser"
+version = "0.1.0"
+source = { editable = "libs/knx_project_parser" }
+dependencies = [
+    { name = "pyyaml" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pyyaml", specifier = ">=6.0.3" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
 
 [[package]]
 name = "mako"
@@ -1242,203 +1439,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/1f/93/041fca8274050e40e
 wheels = [
     { url = "https://files.pythonhosted.org/packages/31/a3/5b1562db76a5a488274b2332a97199b32d0442aca0ed193697fd47786316/uvicorn-0.46.0-py3-none-any.whl", hash = "sha256:bbebbcbed972d162afca128605223022bedd345b7bc7855ce66deb31487a9048", size = 70926, upload-time = "2026-04-23T07:15:58.355Z" },
 ]
-
-[[package]]
-name = "web-monitoring"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "wm-clickhouse" },
-    { name = "wm-config-registry" },
-    { name = "wm-demo-stack" },
-    { name = "wm-edge-agent" },
-    { name = "wm-knx-demo" },
-    { name = "wm-knx-parser" },
-]
-
-[package.dev-dependencies]
-coverage = [
-    { name = "coverage" },
-    { name = "genbadge", extra = ["coverage"] },
-]
-integration = [
-    { name = "paho-mqtt" },
-    { name = "pytest" },
-    { name = "pyyaml" },
-]
-lint = [
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "wm-clickhouse", editable = "tools/wm_clickhouse_migrations" },
-    { name = "wm-config-registry", editable = "apps/wm_config_registry" },
-    { name = "wm-demo-stack", editable = "libs/wm_demo_stack" },
-    { name = "wm-edge-agent", editable = "apps/wm_edge_agent" },
-    { name = "wm-knx-demo", editable = "apps/wm_knx_demo" },
-    { name = "wm-knx-parser", editable = "libs/wm_knx_parser" },
-]
-
-[package.metadata.requires-dev]
-coverage = [
-    { name = "coverage", extras = ["toml"], specifier = ">=7.13.5" },
-    { name = "genbadge", extras = ["coverage"], specifier = ">=1.1.3" },
-]
-integration = [
-    { name = "paho-mqtt", specifier = ">=2.1.0" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-]
-lint = [{ name = "ruff", specifier = ">=0.15.8" }]
-
-[[package]]
-name = "wm-clickhouse"
-version = "0.1.0"
-source = { editable = "tools/wm_clickhouse_migrations" }
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
-
-[[package]]
-name = "wm-config-registry"
-version = "0.1.0"
-source = { editable = "apps/wm_config_registry" }
-dependencies = [
-    { name = "alembic" },
-    { name = "asyncpg" },
-    { name = "confluent-kafka" },
-    { name = "fastapi" },
-    { name = "greenlet" },
-    { name = "jsonschema" },
-    { name = "pydantic" },
-    { name = "sqladmin" },
-    { name = "sqlalchemy" },
-    { name = "uvicorn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "alembic", specifier = ">=1.18.4" },
-    { name = "asyncpg", specifier = ">=0.31.0" },
-    { name = "confluent-kafka", specifier = ">=2.14.0" },
-    { name = "fastapi", specifier = ">=0.136.1" },
-    { name = "greenlet", specifier = ">=3.5.0" },
-    { name = "jsonschema", specifier = ">=4.26.0" },
-    { name = "pydantic", specifier = ">=2.12.5" },
-    { name = "sqladmin", specifier = ">=0.21.0" },
-    { name = "sqlalchemy", specifier = ">=2.0.49" },
-    { name = "uvicorn", specifier = ">=0.46.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pytest", specifier = ">=9.0.2" },
-    { name = "pytest-asyncio", specifier = ">=1.3.0" },
-]
-
-[[package]]
-name = "wm-demo-stack"
-version = "0.1.0"
-source = { editable = "libs/wm_demo_stack" }
-dependencies = [
-    { name = "confluent-kafka" },
-    { name = "paho-mqtt" },
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "confluent-kafka", specifier = "==2.14.0" },
-    { name = "paho-mqtt", specifier = ">=2.1.0" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
-
-[[package]]
-name = "wm-edge-agent"
-version = "0.1.0"
-source = { editable = "apps/wm_edge_agent" }
-dependencies = [
-    { name = "paho-mqtt" },
-    { name = "pydantic" },
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "paho-mqtt", specifier = ">=2.1.0" },
-    { name = "pydantic", specifier = ">=2.12.5" },
-    { name = "pyyaml", specifier = ">=6.0.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
-
-[[package]]
-name = "wm-knx-demo"
-version = "0.1.0"
-source = { editable = "apps/wm_knx_demo" }
-dependencies = [
-    { name = "xknx" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "xknx", specifier = ">=3.15.0" }]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
-
-[[package]]
-name = "wm-knx-parser"
-version = "0.1.0"
-source = { editable = "libs/wm_knx_parser" }
-dependencies = [
-    { name = "pyyaml" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "pyyaml", specifier = ">=6.0.3" }]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
 
 [[package]]
 name = "wtforms"

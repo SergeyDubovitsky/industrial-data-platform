@@ -1,7 +1,8 @@
 # Local Kafka Connect
 
 This directory contains the local Kafka Connect image and versioned connector
-config for the `Kafka -> ClickHouse` Telemetry Store path.
+config for the `Kafka -> ClickHouse` Industrial Data Platform Telemetry Store
+path.
 
 The connector is installed into the image at build time:
 
@@ -27,6 +28,6 @@ MVP assumptions:
 - Raw Kafka values are wrapped into the landing `payload_json` column through
   Kafka Connect `HoistField$Value`.
 - `exactlyOnce=false`.
-- Connector-level errors are routed to `wm.platform.telemetry-store.dlq.v1`.
+- Connector-level errors are routed to `idp.telemetry-store.dlq.v1`.
 - Domain mapping stays out of Kafka Connect and is handled by ClickHouse
   materialized views in the next implementation slice.

@@ -1,0 +1,11 @@
+model {
+    extend web-monitoring-module {
+        grafana = container 'Grafana' {
+            description 'Read-only dashboard слой Web Monitoring Module: инженерные dashboards, операторские представления и панели истории поверх ClickHouse read models Industrial Data Platform.'
+            technology 'Grafana OSS / grafana-clickhouse-datasource / dashboards'
+            icon tech:grafana
+
+            -> industrial-data-platform.telemetry-store 'Читает telemetry_latest_v1, telemetry_1m_v1, telemetry_1h_v1 и diagnostics из ClickHouse для dashboards'
+        }
+    }
+}

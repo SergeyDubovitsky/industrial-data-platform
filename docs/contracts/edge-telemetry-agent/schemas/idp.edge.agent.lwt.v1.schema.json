@@ -1,0 +1,34 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/edge-telemetry-agent/idp.edge.agent.lwt.v1.schema.json",
+    "title": "idp.edge.agent.lwt.v1",
+    "description": "Retained MQTT LWT/status payload MQTT publisher агента.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "status",
+        "ts"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.edge.agent.lwt.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "online",
+                "offline"
+            ]
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        }
+    }
+}

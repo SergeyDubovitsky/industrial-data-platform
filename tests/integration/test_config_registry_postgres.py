@@ -6,30 +6,30 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from wm_config_registry.application.use_cases.config_outbox import (
+from idp_config_registry.application.use_cases.config_outbox import (
     MarkConfigOutboxPublished,
     ReleaseExpiredConfigOutboxLeases,
     ReserveConfigOutboxCommand,
     ReserveConfigOutboxRecords,
 )
-from wm_config_registry.application.use_cases.render_config import (
+from idp_config_registry.application.use_cases.render_config import (
     RenderAgentRuntimeConfig,
     RenderAgentRuntimeConfigCommand,
     StoreRenderedAgentRuntimeConfig,
 )
-from wm_config_registry.domain.value_objects import ConfigOutboxStatus
-from wm_config_registry.infrastructure.json_schema_validator import (
+from idp_config_registry.domain.value_objects import ConfigOutboxStatus
+from idp_config_registry.infrastructure.json_schema_validator import (
     JsonSchemaConfigPayloadValidator,
 )
-from wm_config_registry.infrastructure.postgres.unit_of_work import (
+from idp_config_registry.infrastructure.postgres.unit_of_work import (
     PostgresUnitOfWorkFactory,
 )
-from wm_config_registry.main import create_app
-from wm_config_registry.settings import ConfigRegistrySettings
+from idp_config_registry.main import create_app
+from idp_config_registry.settings import ConfigRegistrySettings
 
 pytestmark = pytest.mark.integration
 
-CONTRACT_DIR = Path("docs/contracts/wm-edge-agent/schemas")
+CONTRACT_DIR = Path("docs/contracts/edge-telemetry-agent/schemas")
 
 
 @pytest.mark.integration_smoke

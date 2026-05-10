@@ -1,0 +1,41 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/edge-telemetry-agent/idp.edge.source.connection.v1.schema.json",
+    "title": "idp.edge.source.connection.v1",
+    "description": "Retained MQTT status payload состояния southbound source.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "state",
+        "ts"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.edge.source.connection.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "state": {
+            "type": "string",
+            "enum": [
+                "connected",
+                "disconnected",
+                "reconnecting"
+            ]
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "reason": {
+            "type": [
+                "string",
+                "null"
+            ]
+        }
+    }
+}

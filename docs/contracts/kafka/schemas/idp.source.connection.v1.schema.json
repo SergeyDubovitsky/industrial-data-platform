@@ -1,0 +1,61 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/kafka/idp.source.connection.v1.schema.json",
+    "title": "idp.source.connection.v1",
+    "description": "Canonical source connection status event.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "asset_id",
+        "agent_id",
+        "source_id",
+        "state",
+        "ts",
+        "ingested_at"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.source.connection.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "asset_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "agent_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "state": {
+            "type": "string",
+            "enum": [
+                "connected",
+                "disconnected",
+                "reconnecting"
+            ]
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "ingested_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "reason": {
+            "type": [
+                "string",
+                "null"
+            ]
+        }
+    }
+}

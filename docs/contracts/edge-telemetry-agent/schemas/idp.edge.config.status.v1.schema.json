@@ -1,0 +1,59 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/edge-telemetry-agent/idp.edge.config.status.v1.schema.json",
+    "title": "idp.edge.config.status.v1",
+    "description": "Retained status message describing the agent runtime config revision currently applied by an edge agent.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "agent_id",
+        "status",
+        "ts"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.edge.config.status.v1"
+        },
+        "agent_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+        },
+        "tenant_id": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "asset_id": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "config_revision": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "status": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "applied",
+                "rejected"
+            ]
+        },
+        "reason": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        }
+    }
+}

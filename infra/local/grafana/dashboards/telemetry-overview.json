@@ -2,7 +2,7 @@
   "annotations": {
     "list": []
   },
-  "description": "Local Grafana dashboard over ClickHouse telemetry read models.",
+  "description": "Local Web Monitoring Module dashboard over ClickHouse telemetry read models.",
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -12,7 +12,7 @@
     {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
-        "uid": "wm-clickhouse-telemetry-store"
+        "uid": "idp-telemetry-store-telemetry-store"
       },
       "fieldConfig": {
         "defaults": {
@@ -60,7 +60,7 @@
         {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
-            "uid": "wm-clickhouse-telemetry-store"
+            "uid": "idp-telemetry-store-telemetry-store"
           },
           "editorType": "sql",
           "format": 1,
@@ -86,7 +86,7 @@
     {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
-        "uid": "wm-clickhouse-telemetry-store"
+        "uid": "idp-telemetry-store-telemetry-store"
       },
       "fieldConfig": {
         "defaults": {
@@ -134,7 +134,7 @@
         {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
-            "uid": "wm-clickhouse-telemetry-store"
+            "uid": "idp-telemetry-store-telemetry-store"
           },
           "editorType": "sql",
           "format": 1,
@@ -160,7 +160,7 @@
     {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
-        "uid": "wm-clickhouse-telemetry-store"
+        "uid": "idp-telemetry-store-telemetry-store"
       },
       "fieldConfig": {
         "defaults": {
@@ -237,7 +237,7 @@
         {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
-            "uid": "wm-clickhouse-telemetry-store"
+            "uid": "idp-telemetry-store-telemetry-store"
           },
           "editorType": "sql",
           "format": 0,
@@ -263,7 +263,7 @@
     {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
-        "uid": "wm-clickhouse-telemetry-store"
+        "uid": "idp-telemetry-store-telemetry-store"
       },
       "fieldConfig": {
         "defaults": {
@@ -311,7 +311,7 @@
         {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
-            "uid": "wm-clickhouse-telemetry-store"
+            "uid": "idp-telemetry-store-telemetry-store"
           },
           "editorType": "sql",
           "format": 1,
@@ -337,7 +337,7 @@
     {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
-        "uid": "wm-clickhouse-telemetry-store"
+        "uid": "idp-telemetry-store-telemetry-store"
       },
       "fieldConfig": {
         "defaults": {
@@ -385,7 +385,7 @@
         {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
-            "uid": "wm-clickhouse-telemetry-store"
+            "uid": "idp-telemetry-store-telemetry-store"
           },
           "editorType": "sql",
           "format": 1,
@@ -411,7 +411,7 @@
     {
       "datasource": {
         "type": "grafana-clickhouse-datasource",
-        "uid": "wm-clickhouse-telemetry-store"
+        "uid": "idp-telemetry-store-telemetry-store"
       },
       "fieldConfig": {
         "defaults": {
@@ -459,7 +459,7 @@
         {
           "datasource": {
             "type": "grafana-clickhouse-datasource",
-            "uid": "wm-clickhouse-telemetry-store"
+            "uid": "idp-telemetry-store-telemetry-store"
           },
           "editorType": "sql",
           "format": 1,
@@ -501,7 +501,7 @@
   "timepicker": {},
   "timezone": "browser",
   "title": "Telemetry Overview",
-  "uid": "wm-telemetry-overview",
+  "uid": "idp-telemetry-overview",
   "version": 1,
   "weekStart": ""
 }

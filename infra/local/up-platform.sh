@@ -20,14 +20,14 @@ compose() {
 }
 
 compose build \
-  wm-config-registry \
+  idp-config-registry \
   grafana \
   kafka-connect
 
 compose up -d --remove-orphans postgres
 
-compose run --rm --no-deps wm-config-registry \
-  alembic -c apps/wm_config_registry/alembic.ini upgrade head
+compose run --rm --no-deps idp-config-registry \
+  alembic -c apps/idp_config_registry/alembic.ini upgrade head
 
 compose up -d --remove-orphans \
   mqtt-broker \
@@ -38,8 +38,8 @@ compose up -d --remove-orphans \
   redpanda-connect-source-config-snapshot \
   clickhouse \
   postgres \
-  wm-config-registry \
-  wm-config-registry-outbox-worker \
+  idp-config-registry \
+  idp-config-registry-outbox-worker \
   kafka-connect \
   kafka-ui \
   mqttx-web \

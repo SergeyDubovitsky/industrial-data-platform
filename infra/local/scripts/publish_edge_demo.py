@@ -4,14 +4,14 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-LIB_SRC = REPO_ROOT / "libs" / "wm_demo_stack" / "src"
+LIB_SRC = REPO_ROOT / "libs" / "idp_demo_stack" / "src"
 
 
 def main() -> int:
     if str(LIB_SRC) not in sys.path:
         sys.path.insert(0, str(LIB_SRC))
 
-    from wm_demo_stack.cli import main as package_main
+    from idp_demo_stack.cli import main as package_main
 
     return package_main()
 

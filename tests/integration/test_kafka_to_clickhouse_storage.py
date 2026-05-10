@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-pytestmark = [pytest.mark.integration, pytest.mark.integration_storage]
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.integration_storage,
+    pytest.mark.integration_data_platform,
+]
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -15,7 +19,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     local_storage_stack,
 ) -> None:
     payload = {
-        "message_type": "wm.platform.telemetry.event.v1",
+        "message_type": "idp.telemetry.event.v1",
         "tenant_id": "tenant-storage-it",
         "event_id": "storage-raw-001",
         "idempotency_key": "tenant-storage-it|asset-storage-it|agent-storage-it|storage-raw-001",
@@ -41,7 +45,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     local_storage_stack.clickhouse_query("TRUNCATE TABLE kafka_telemetry_events_raw_v1")
     local_storage_stack.clickhouse_query("TRUNCATE TABLE telemetry_events_v1")
     local_storage_stack.produce_kafka_text(
-        "wm.platform.telemetry.events.v1",
+        "idp.telemetry.events.v1",
         payload_json,
     )
 
@@ -79,7 +83,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     )
 
     local_storage_stack.produce_kafka_text(
-        "wm.platform.telemetry.events.v1",
+        "idp.telemetry.events.v1",
         payload_json,
     )
     duplicate_raw_count = local_storage_stack.wait_for_clickhouse_value(
@@ -153,7 +157,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     assert hourly_rollup_row == "1\t1\t1\t42.5\t42.5\t42.5\t42.5"
 
     source_config_payload = {
-        "message_type": "wm.platform.source.config.v1",
+        "message_type": "idp.source.config.v1",
         "tenant_id": "tenant-storage-it",
         "asset_id": "asset-storage-it",
         "agent_id": "agent-storage-it",
@@ -180,7 +184,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
         separators=(",", ":"),
     )
     local_storage_stack.produce_kafka_text(
-        "wm.platform.source.configs.v1",
+        "idp.source.configs.v1",
         source_config_json,
         key="tenant-storage-it|asset-storage-it|agent-storage-it|source-storage-it",
     )
@@ -203,7 +207,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
         "ingested_at": "2026-05-03T05:50:04Z",
     }
     local_storage_stack.produce_kafka_text(
-        "wm.platform.source.configs.v1",
+        "idp.source.configs.v1",
         json.dumps(
             replayed_source_config_payload,
             ensure_ascii=True,
@@ -233,7 +237,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     assert deduplicated_source_config_count == "1"
 
     source_connection_payload = {
-        "message_type": "wm.platform.source.connection.v1",
+        "message_type": "idp.source.connection.v1",
         "tenant_id": "tenant-storage-it",
         "asset_id": "asset-storage-it",
         "agent_id": "agent-storage-it",
@@ -244,7 +248,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
         "ingested_at": "2026-05-03T05:50:05Z",
     }
     local_storage_stack.produce_kafka_text(
-        "wm.platform.source.connections.v1",
+        "idp.source.connections.v1",
         json.dumps(source_connection_payload, ensure_ascii=True, separators=(",", ":")),
         key="tenant-storage-it|asset-storage-it|agent-storage-it|source-storage-it",
     )
@@ -259,7 +263,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     assert source_connection_row == "connected\t\\N"
 
     agent_status_payload = {
-        "message_type": "wm.platform.agent.status.v1",
+        "message_type": "idp.agent.status.v1",
         "tenant_id": "tenant-storage-it",
         "asset_id": "asset-storage-it",
         "agent_id": "agent-storage-it",
@@ -268,7 +272,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
         "ingested_at": "2026-05-03T05:50:07Z",
     }
     local_storage_stack.produce_kafka_text(
-        "wm.platform.agent.status.v1",
+        "idp.agent.status.v1",
         json.dumps(agent_status_payload, ensure_ascii=True, separators=(",", ":")),
         key="tenant-storage-it|asset-storage-it|agent-storage-it",
     )
@@ -283,7 +287,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
     assert agent_status_row == "online"
 
     derived_payload = {
-        "message_type": "wm.platform.derived.event.v1",
+        "message_type": "idp.derived.event.v1",
         "tenant_id": "tenant-storage-it",
         "derived_event_id": "derived-storage-001",
         "idempotency_key": "tenant-storage-it|asset-storage-it|derived-storage-001",
@@ -298,7 +302,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
         "attributes": {"threshold": 40.0},
     }
     local_storage_stack.produce_kafka_text(
-        "wm.platform.derived.events.v1",
+        "idp.derived.events.v1",
         json.dumps(derived_payload, ensure_ascii=True, separators=(",", ":")),
         key="tenant-storage-it|asset-storage-it|metric-temperature-high",
     )
@@ -318,7 +322,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
             "run",
             "--env-file",
             str(local_storage_stack.env_file),
-            "wm-clickhouse",
+            "idp-telemetry-store",
             "load-poc",
             "telemetry-read-models",
             "--rows",
@@ -352,7 +356,7 @@ def test_kafka_connect_writes_raw_json_to_clickhouse_landing_and_contract_table(
 
 def test_invalid_storage_record_goes_to_kafka_connect_dlq(local_storage_stack) -> None:
     invalid_payload = {
-        "message_type": "wm.platform.telemetry.event.v1",
+        "message_type": "idp.telemetry.event.v1",
         "tenant_id": "tenant-storage-it",
         "event_id": "storage-invalid-001",
         "idempotency_key": "tenant-storage-it|asset-storage-it|agent-storage-it|storage-invalid-001",
@@ -377,12 +381,12 @@ def test_invalid_storage_record_goes_to_kafka_connect_dlq(local_storage_stack) -
 
     local_storage_stack.clickhouse_query("TRUNCATE TABLE telemetry_events_v1")
     local_storage_stack.produce_kafka_text(
-        "wm.platform.telemetry.events.v1",
+        "idp.telemetry.events.v1",
         payload_json,
     )
 
     _key, dlq_payload = local_storage_stack.consume_kafka_json(
-        "wm.platform.telemetry-store.dlq.v1",
+        "idp.telemetry-store.dlq.v1",
         predicate=lambda _key, payload: payload.get("event_id")
         == "storage-invalid-001",
         timeout=60,

@@ -1,0 +1,14 @@
+model {
+    extend alarm-management-module {
+        alarm-rule-engine = container 'Alarm Rule Engine' {
+            description 'Обрабатывает входящие события по правилам, ведет жизненный цикл alarm и инициирует уведомления и эскалации.'
+            technology 'Rule engine / stream processor'
+            icon bootstrap:alarm
+
+            -> industrial-data-platform.kafka-event-log 'Читает Kafka topics с telemetry events и derived events'
+            -> industrial-data-platform.telemetry-store 'Читает аналитический контекст и записывает immutable alarm history'
+            -> industrial-data-platform.platform-store 'Записывает current alarm state, acknowledgements, mutes и workflow state'
+            -> notification-service 'Запускает доставку уведомлений'
+        }
+    }
+}

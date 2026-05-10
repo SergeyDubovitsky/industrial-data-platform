@@ -8,13 +8,17 @@ from typing import Any
 
 import pytest
 
-pytestmark = [pytest.mark.integration, pytest.mark.integration_grafana]
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.integration_grafana,
+    pytest.mark.integration_web_monitoring,
+]
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DASHBOARD_FILE = (
     REPO_ROOT / "infra" / "local" / "grafana" / "dashboards" / "telemetry-overview.json"
 )
-DATASOURCE_UID = "wm-clickhouse-telemetry-store"
-DASHBOARD_UID = "wm-telemetry-overview"
+DATASOURCE_UID = "idp-telemetry-store-telemetry-store"
+DASHBOARD_UID = "idp-telemetry-overview"
 RUN_ID = "grafana-it"
 
 
@@ -28,7 +32,7 @@ def test_grafana_reads_clickhouse_telemetry_read_models(
             "run",
             "--env-file",
             str(local_grafana_clickhouse_stack.env_file),
-            "wm-clickhouse",
+            "idp-telemetry-store",
             "load-poc",
             "telemetry-read-models",
             "--rows",
@@ -80,7 +84,7 @@ def test_grafana_reads_clickhouse_telemetry_read_models(
     assert "telemetry_1m_v1" in dashboard_json
     assert "telemetry_1h_v1" in dashboard_json
     assert "meta/catalog" not in dashboard_json
-    assert "wm/v1/" not in dashboard_json
+    assert "idp/v1/" not in dashboard_json
 
     query_response = local_grafana_clickhouse_stack.grafana_json(
         "POST",

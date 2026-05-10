@@ -1,0 +1,12 @@
+model {
+    extend industrial-data-platform {
+        idp-config-registry-outbox-worker = container 'idp-config-registry-outbox-worker' {
+            description 'Worker из apps/idp_config_registry: читает PostgreSQL config_outbox и публикует idp.edge.config.delivery.v1 records в Kafka topic idp.edge.configs.v1. MQTT retained topics строит Redpanda Connect projection.'
+            technology 'apps/idp_config_registry / idp-config-registry publish-config-outbox-worker / Kafka producer'
+            icon bootstrap:cloud-upload
+
+            -> platform-store 'Читает config_outbox и rendered config revisions из PostgreSQL'
+            -> kafka-event-log 'Публикует idp.edge.config.delivery.v1 records в idp.edge.configs.v1'
+        }
+    }
+}

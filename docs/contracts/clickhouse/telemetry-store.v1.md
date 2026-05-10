@@ -1,13 +1,18 @@
-# `wm.clickhouse.telemetry-store.v1`
+# `idp.telemetry-store.clickhouse.telemetry-store.v1`
 
-Дата: 2026-05-02
+Дата: 2026-05-10
 Статус: working draft
 
 Этот контракт фиксирует начальную migration-backed физическую модель
 `Telemetry Store` на базе ClickHouse. Он нужен для review, проверки
-совместимости Kafka consumers и сопровождения уже существующих миграций.
-Физическая схема еще не считается production-validated performance schema до
-нагрузочного PoC.
+совместимости Kafka consumers и сопровождения fresh baseline migration
+`0001_idp_telemetry_store_v1.sql`. Физическая схема еще не считается
+production-validated performance schema до нагрузочного PoC.
+
+`Telemetry Store` принадлежит `Industrial Data Platform`.
+Таблицы и view names не переименовываются. `alarm_history_events_v1` остается
+storage sink в `Telemetry Store`, но writer/owner этого потока находится в
+`Alarm Management Module`.
 
 ## Tables
 
@@ -18,7 +23,7 @@
 | `source_connection_events_v1` | История southbound source connection states | `telemetry-store-writer.v1` |
 | `agent_status_events_v1` | История agent online/offline status | `telemetry-store-writer.v1` |
 | `derived_events_v1` | Derived events from Streaming Analytics | `telemetry-store-writer.v1`, `streaming-analytics.v1` |
-| `alarm_history_events_v1` | Immutable alarm lifecycle history | `alarm-rule-engine.v1` |
+| `alarm_history_events_v1` | Immutable alarm lifecycle history storage sink; writer-owned by `Alarm Management Module` | `alarm-rule-engine.v1` |
 | `telemetry_events_dedup_v1` | Deduplicated view для безопасного чтения истории telemetry | query view |
 | `telemetry_latest_v1` | Последнее значение по точке для быстрых UI/API запросов | query view |
 | `telemetry_1m_v1` | Correctness-first rollup view по точке за 1 минуту | query view |
@@ -26,17 +31,17 @@
 
 ## Kafka landing tables
 
-Первая миграция создает raw landing tables для Kafka Connect Sink. Они являются
+Fresh baseline migration создает raw landing tables для Kafka Connect Sink. Они являются
 техническим слоем между Kafka topics и contract tables; доменный transform
-выполняется последующими materialized views.
+выполняется materialized views в той же baseline migration.
 
 | Kafka topic | Landing table |
 | --- | --- |
-| `wm.platform.telemetry.events.v1` | `kafka_telemetry_events_raw_v1` |
-| `wm.platform.source.configs.v1` | `kafka_source_configs_raw_v1` |
-| `wm.platform.source.connections.v1` | `kafka_source_connections_raw_v1` |
-| `wm.platform.agent.status.v1` | `kafka_agent_status_raw_v1` |
-| `wm.platform.derived.events.v1` | `kafka_derived_events_raw_v1` |
+| `idp.telemetry.events.v1` | `kafka_telemetry_events_raw_v1` |
+| `idp.source.configs.v1` | `kafka_source_configs_raw_v1` |
+| `idp.source.connections.v1` | `kafka_source_connections_raw_v1` |
+| `idp.agent.status.v1` | `kafka_agent_status_raw_v1` |
+| `idp.derived.events.v1` | `kafka_derived_events_raw_v1` |
 
 Initial landing shape:
 
@@ -51,7 +56,7 @@ confirms reliable metadata population without connector-side domain mapping.
 
 ## Materialized views
 
-Вторая миграция создает materialized views для преобразования raw landing rows
+Baseline migration создает materialized views для преобразования raw landing rows
 в contract tables:
 
 | Landing table | Materialized view | Target table |
@@ -68,7 +73,7 @@ MV layer owns domain parsing from `payload_json`.
   expressions.
 - Invalid landing inserts are rejected by the MV and, with Kafka Connect
   `errors.tolerance=all`, are routed to
-  `wm.platform.telemetry-store.dlq.v1`.
+  `idp.telemetry-store.dlq.v1`.
 - Polymorphic Kafka `value` is mapped to typed ClickHouse columns:
   `number -> value_float`, `boolean -> value_bool`,
   `string -> value_string`.
@@ -170,7 +175,7 @@ eventual-dedup storage layer, а не мгновенно уникальным st
   `idempotency_key`/`FINAL` semantics, когда источником являются raw contract
   tables.
 
-Третья миграция добавляет correctness-first query views поверх
+Baseline migration добавляет correctness-first query views поверх
 `telemetry_events_v1 FINAL`:
 
 - `telemetry_events_dedup_v1` возвращает deduplicated telemetry history.

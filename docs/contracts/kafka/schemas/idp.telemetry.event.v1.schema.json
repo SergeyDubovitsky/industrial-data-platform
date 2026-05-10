@@ -1,0 +1,148 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/kafka/idp.telemetry.event.v1.schema.json",
+    "title": "idp.telemetry.event.v1",
+    "description": "Canonical telemetry event после MQTT-to-Kafka enrichment.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "event_id",
+        "idempotency_key",
+        "asset_id",
+        "agent_id",
+        "source_id",
+        "source_type",
+        "point_id",
+        "point_key",
+        "point_ref",
+        "source_config_revision",
+        "ts",
+        "ingested_at",
+        "event_type",
+        "observation_mode",
+        "value_type",
+        "value",
+        "quality",
+        "sequence"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.telemetry.event.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "event_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "idempotency_key": {
+            "type": "string",
+            "minLength": 1
+        },
+        "asset_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "agent_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_type": {
+            "type": "string",
+            "minLength": 1
+        },
+        "point_id": {
+            "type": "string",
+            "description": "Stable Platform Registry id when available. MVP fallback: {tenant_id}|{asset_id}|{source_id}|{point_key}.",
+            "minLength": 1
+        },
+        "point_key": {
+            "type": "string",
+            "minLength": 1
+        },
+        "point_ref": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_config_revision": {
+            "type": "string",
+            "minLength": 1
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "ingested_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "event_type": {
+            "type": "string",
+            "enum": [
+                "telemetry.changed",
+                "telemetry.sample"
+            ]
+        },
+        "observation_mode": {
+            "type": "string",
+            "enum": [
+                "listen",
+                "read_on_start",
+                "periodic_read"
+            ]
+        },
+        "value_type": {
+            "type": "string",
+            "enum": [
+                "boolean",
+                "number",
+                "string"
+            ]
+        },
+        "value": {
+            "type": [
+                "boolean",
+                "number",
+                "string",
+                "null"
+            ]
+        },
+        "value_raw": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "quality": {
+            "type": "string",
+            "enum": [
+                "good",
+                "uncertain",
+                "bad"
+            ]
+        },
+        "sequence": {
+            "type": "integer",
+            "minimum": 1
+        },
+        "metadata": {
+            "type": "object",
+            "additionalProperties": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                ]
+            }
+        }
+    }
+}

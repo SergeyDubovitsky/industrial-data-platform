@@ -1,0 +1,13 @@
+model {
+    extend industrial-data-platform {
+        streaming-analytics = container 'Streaming Analytics' {
+            description 'Обрабатывает поток телеметрии в near-real-time: агрегирует значения, рассчитывает производные признаки и публикует derived events для прикладных модулей.'
+            technology 'Kafka Streams / stream processing'
+            icon bootstrap:activity
+
+            -> kafka-event-log 'Читает Kafka topics с consumer group streaming-analytics.v1'
+            -> telemetry-store 'Читает исторический контекст и записывает aggregates, rollups и derived events по idp.telemetry-store.clickhouse.telemetry-store.v1'
+            -> alarm-management-module.alarm-rule-engine 'Передает derived events и признаки для обработки правил alarm'
+        }
+    }
+}

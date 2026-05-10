@@ -1,0 +1,194 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/edge-telemetry-agent/idp.edge.source-config.v1.schema.json",
+    "title": "idp.edge.source-config.v1",
+    "description": "Retained source config with connection settings, points and acquisition/publish policies.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "asset_id",
+        "agent_id",
+        "config_revision",
+        "source_id",
+        "source_config_revision",
+        "source_type",
+        "enabled",
+        "connection",
+        "acquisition_defaults",
+        "publish_defaults",
+        "points"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.edge.source-config.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "asset_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+        },
+        "agent_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+        },
+        "config_revision": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+        },
+        "source_config_revision": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_type": {
+            "type": "string",
+            "minLength": 1
+        },
+        "enabled": {
+            "type": "boolean"
+        },
+        "connection": {
+            "type": "object"
+        },
+        "acquisition_defaults": {
+            "$ref": "#/$defs/acquisition_settings"
+        },
+        "publish_defaults": {
+            "$ref": "#/$defs/publish_settings"
+        },
+        "points": {
+            "type": "array",
+            "items": {
+                "$ref": "#/$defs/point"
+            }
+        }
+    },
+    "$defs": {
+        "acquisition_settings": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "listen",
+                "read_on_start",
+                "periodic_interval_seconds"
+            ],
+            "properties": {
+                "listen": {
+                    "type": "boolean"
+                },
+                "read_on_start": {
+                    "type": "boolean"
+                },
+                "periodic_interval_seconds": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "exclusiveMinimum": 0
+                }
+            }
+        },
+        "publish_settings": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "enabled",
+                "change_threshold"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "change_threshold": {
+                    "type": [
+                        "number",
+                        "null"
+                    ],
+                    "minimum": 0
+                }
+            }
+        },
+        "point": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "point_key",
+                "point_ref",
+                "name",
+                "value_type",
+                "value_model",
+                "signal_type",
+                "acquisition",
+                "publish",
+                "tags"
+            ],
+            "properties": {
+                "point_key": {
+                    "type": "string",
+                    "pattern": "^(?:[A-Za-z0-9._~-]|%[0-9A-F]{2})+$"
+                },
+                "point_ref": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "description": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "value_type": {
+                    "type": "string",
+                    "enum": [
+                        "boolean",
+                        "number",
+                        "string"
+                    ]
+                },
+                "value_model": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "signal_type": {
+                    "type": "string",
+                    "enum": [
+                        "command",
+                        "feedback",
+                        "status",
+                        "sensor"
+                    ]
+                },
+                "unit": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "acquisition": {
+                    "$ref": "#/$defs/acquisition_settings"
+                },
+                "publish": {
+                    "$ref": "#/$defs/publish_settings"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

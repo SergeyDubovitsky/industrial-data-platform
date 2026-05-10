@@ -1,8 +1,8 @@
 model {
     extend edge-telemetry-agent {
         bootstrap-configuration = container 'BootstrapConfig' {
-            description 'Минимальный локальный config object запуска wm_edge_agent: agent_id, MQTT endpoint, credentials/secret refs, Local State Store path и observability. Не содержит agent runtime registry sources/points.'
-            technology 'wm_edge_agent.domain.config.BootstrapConfig / edge.bootstrap-config.v1'
+            description 'Минимальный локальный config object запуска edge_telemetry_agent: agent_id, MQTT endpoint, credentials/secret refs, Local State Store path и observability. Не содержит agent runtime registry sources/points.'
+            technology 'edge_telemetry_agent.domain.config.BootstrapConfig / edge.bootstrap-config.v1'
         }
     }
 }

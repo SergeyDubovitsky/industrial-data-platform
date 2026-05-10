@@ -7,16 +7,16 @@ input:
     seed_brokers:
       - kafka:19092
     topics:
-      - wm.platform.edge.configs.v1
+      - idp.edge.configs.v1
     consumer_group: edge-config-mqtt-projector.v1
-    client_id: wm-local-edge-config-mqtt-projector
+    client_id: idp-local-edge-config-mqtt-projector
     start_offset: earliest
 
 pipeline:
   threads: 1
   processors:
     - mapping: |
-        let _message_type = if this.message_type == "wm.platform.edge.config.delivery.v1" { this.message_type } else { throw("unsupported_message_type") }
+        let _message_type = if this.message_type == "idp.edge.config.delivery.v1" { this.message_type } else { throw("unsupported_message_type") }
         let _target_mqtt_topic = if this.target_mqtt_topic != null && this.target_mqtt_topic != "" { this.target_mqtt_topic } else { throw("target_mqtt_topic_missing") }
         let _mqtt_retain = if this.mqtt_retain == true { this.mqtt_retain } else { throw("mqtt_retain_must_be_true") }
         let _mqtt_qos = if this.mqtt_qos == 1 { this.mqtt_qos } else { throw("mqtt_qos_must_be_1") }
@@ -31,7 +31,7 @@ output:
   mqtt:
     urls:
       - tcp://mqtt-broker:1883
-    client_id: wm-local-edge-config-mqtt-projector
+    client_id: idp-local-edge-config-mqtt-projector
     user: ${MQTT_USERNAME}
     password: ${MQTT_PASSWORD}
     topic: '${! meta("mqtt_topic") }'

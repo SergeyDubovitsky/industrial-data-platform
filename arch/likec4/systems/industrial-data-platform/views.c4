@@ -1,0 +1,20 @@
+views 'Developed Systems / Industrial Data Platform' {
+    view c2-industrial-data-platform-containers of industrial-data-platform {
+        title 'C2 Containers'
+        description 'Контейнерная декомпозиция Industrial Data Platform: ingestion, config registry, Kafka-compatible event log, storage и shared platform services. Web Monitoring и Alarm Management показаны как отдельные потребляющие модули.'
+
+        include *
+        include edge-telemetry-agent
+        include web-monitoring-module
+        include alarm-management-module
+        include service-engineer
+
+        style industrial-data-platform {
+            color primary
+        }
+
+        rank source {
+            edge-telemetry-agent, service-engineer
+        }
+    }
+}

@@ -1,0 +1,16 @@
+model {
+    extend web-monitoring-module {
+        web-monitoring-frontend = container 'Web Monitoring Frontend' {
+            description 'Browser-based frontend модуля мониторинга: пользовательский web-интерфейс для операторских экранов, истории объекта и доступа к dashboards без alarm workflow ownership.'
+            technology 'Browser / SPA'
+            icon bootstrap:browser-chrome
+            style {
+                shape browser
+            }
+
+            -> industrial-data-platform.keycloak 'Аутентифицирует пользователя и получает OIDC tokens'
+            -> industrial-data-platform.idp-config-registry 'Запрашивает registry/config данные текущего backend-среза'
+            -> grafana 'Открывает и встраивает dashboards и live-панели'
+        }
+    }
+}

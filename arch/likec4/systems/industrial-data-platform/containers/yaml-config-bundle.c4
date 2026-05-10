@@ -1,0 +1,11 @@
+model {
+    extend industrial-data-platform {
+        yaml-config-bundle = container 'YAML Config Bundle' {
+            description 'Versioned operations bundle для первого этапа authoring edge-конфигурации. Содержит tenant/asset/agent/source/point config и не читается edge-agent напрямую.'
+            technology 'YAML bundle / Git versioned config'
+            style {
+                shape storage
+            }
+        }
+    }
+}

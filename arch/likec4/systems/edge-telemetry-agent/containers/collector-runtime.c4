@@ -1,8 +1,8 @@
 model {
     extend edge-telemetry-agent {
         collector-runtime = container 'ObservationProcessor' {
-            description 'Основной processing use case wm_edge_agent: southbound-адаптеры, сбор данных, нормализация, фильтрация изменений, обновление локального state и постановка событий в delivery outbox.'
-            technology 'wm_edge_agent.application.processing.ObservationProcessor'
+            description 'Основной processing use case edge_telemetry_agent: southbound-адаптеры, сбор данных, нормализация, фильтрация изменений, обновление локального state и постановка событий в delivery outbox.'
+            technology 'edge_telemetry_agent.application.processing.ObservationProcessor'
 
             -> bootstrap-configuration 'Загружает agent_id и MQTT bootstrap-параметры'
             -> agent-runtime-config-cache 'Читает retained agent runtime/source configs, tenant_id, source_config_revision и point registry'

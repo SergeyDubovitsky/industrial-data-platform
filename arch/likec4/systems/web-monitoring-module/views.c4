@@ -1,0 +1,26 @@
+views 'Developed Systems / Web Monitoring Module' {
+    view c2-web-monitoring-module-containers of web-monitoring-module {
+        title 'C2 Containers'
+        description 'Контейнерная декомпозиция Web Monitoring Module: операторский frontend и dashboards поверх read models Industrial Data Platform.'
+
+        include *
+        include operator
+        include dispatcher
+        include service-engineer
+        include industrial-data-platform.telemetry-store
+        include industrial-data-platform.idp-config-registry
+        include industrial-data-platform.keycloak
+
+        style web-monitoring-module {
+            color primary
+        }
+
+        rank source {
+            service-engineer, operator, dispatcher
+        }
+
+        rank sink {
+            industrial-data-platform
+        }
+    }
+}

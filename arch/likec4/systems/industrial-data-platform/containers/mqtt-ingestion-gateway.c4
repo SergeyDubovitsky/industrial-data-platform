@@ -1,0 +1,12 @@
+model {
+    extend industrial-data-platform {
+        mqtt-ingestion-gateway = container 'MQTT Ingestion Gateway' {
+            description 'Принимает MQTT telemetry events и status topics от edge_telemetry_agent, хранит retained agent runtime/source configs для агентов, восстанавливает routing context из topic и предоставляет MQTT-поток для чтения Redpanda Connect.'
+            technology 'MQTT broker / ingestion service'
+            icon bootstrap:broadcast
+
+            -> edge-telemetry-agent.agent-runtime-config-cache 'Предоставляет retained idp.edge.agent-runtime-config.v1 и idp.edge.source-config.v1 для загрузки edge runtime'
+        }
+    }
+
+}

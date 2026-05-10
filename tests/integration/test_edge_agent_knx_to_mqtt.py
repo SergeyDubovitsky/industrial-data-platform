@@ -10,20 +10,20 @@ import paho.mqtt.client as mqtt
 import pytest
 import yaml
 
-from wm_demo_stack.bundle import load_bundle
-from wm_demo_stack.models import TopicScope
-from wm_demo_stack.scenario import agent_runtime_config_payload, source_config_payload
-from wm_edge_agent.application.configuration import load_agent_runtime_config
-from wm_edge_agent.application.delivery import DeliveryWorker
-from wm_edge_agent.application.processing import ObservationProcessor
-from wm_edge_agent.domain.events import Observation
-from wm_edge_agent.infrastructure.mqtt_publisher import connect_mqtt_publisher
-from wm_edge_agent.infrastructure.sqlite_outbox import SQLiteOutbox
+from edge_telemetry_agent.application.configuration import load_agent_runtime_config
+from edge_telemetry_agent.application.delivery import DeliveryWorker
+from edge_telemetry_agent.application.processing import ObservationProcessor
+from edge_telemetry_agent.domain.events import Observation
+from edge_telemetry_agent.infrastructure.mqtt_publisher import connect_mqtt_publisher
+from edge_telemetry_agent.infrastructure.sqlite_outbox import SQLiteOutbox
+from idp_demo_stack.bundle import load_bundle
+from idp_demo_stack.models import TopicScope
+from idp_demo_stack.scenario import agent_runtime_config_payload, source_config_payload
 
 pytestmark = pytest.mark.integration
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEMO_BUNDLE_PATH = REPO_ROOT / "environments" / "demo-stand" / "wm_edge_agent" / "config.bundle.yaml"
+DEMO_BUNDLE_PATH = REPO_ROOT / "environments" / "demo-stand" / "edge_telemetry_agent" / "config.bundle.yaml"
 KAFKA_SCHEMAS_ROOT = REPO_ROOT / "docs" / "contracts" / "kafka" / "schemas"
 
 
@@ -50,7 +50,7 @@ def test_demo_knx_edge_delivery_flow_reaches_mqtt_kafka_and_clickhouse(
 
     point = bundle.source("knx_main").points[2]
     topic = (
-        f"wm/v1/assets/{bundle.asset_id}/agents/{bundle.agent_id}"
+        f"idp/v1/assets/{bundle.asset_id}/agents/{bundle.agent_id}"
         f"/sources/knx_main/points/{point.point_key}/event"
     )
     connected = threading.Event()
@@ -134,24 +134,24 @@ def test_demo_knx_edge_delivery_flow_reaches_mqtt_kafka_and_clickhouse(
         assert delivery_result.dead_letter_count == 0
         assert _outbox_row(runtime.storage.sqlite_path, record_id) == ("sent", 1)
         assert received.wait(timeout=10), "MQTT subscriber did not receive outbox event"
-        assert received_payloads[0]["message_type"] == "wm.telemetry.event.v1"
+        assert received_payloads[0]["message_type"] == "idp.edge.telemetry.event.v1"
         assert received_payloads[0]["tenant_id"] == bundle.tenant_id
         assert received_payloads[0]["event_type"] == "telemetry.sample"
         assert received_payloads[0]["source_config_revision"] == "rev-demo-stand-knx-main-001"
         assert received_payloads[0]["value"] == 24.8
 
         kafka_key, kafka_payload = local_storage_stack.consume_kafka_json(
-            "wm.platform.telemetry.events.v1",
+            "idp.telemetry.events.v1",
             expected_key=(
                 f"{bundle.tenant_id}|{bundle.asset_id}|knx_main|{point.point_key}"
             ),
         )
         _assert_schema_subset(
             kafka_payload,
-            KAFKA_SCHEMAS_ROOT / "wm.platform.telemetry.event.v1.schema.json",
+            KAFKA_SCHEMAS_ROOT / "idp.telemetry.event.v1.schema.json",
         )
         assert kafka_key == f"{bundle.tenant_id}|{bundle.asset_id}|knx_main|{point.point_key}"
-        assert kafka_payload["message_type"] == "wm.platform.telemetry.event.v1"
+        assert kafka_payload["message_type"] == "idp.telemetry.event.v1"
         assert kafka_payload["tenant_id"] == bundle.tenant_id
         assert kafka_payload["asset_id"] == bundle.asset_id
         assert kafka_payload["agent_id"] == bundle.agent_id
@@ -196,7 +196,7 @@ def test_mqtt_to_kafka_ingestion_routes_unresolved_telemetry_to_error_topic(
 
     point = bundle.source("knx_main").points[2]
     scope = TopicScope(
-        topic_root="wm/v1",
+        topic_root="idp/v1",
         asset_id=bundle.asset_id,
         agent_id=bundle.agent_id,
     )
@@ -207,7 +207,7 @@ def test_mqtt_to_kafka_ingestion_routes_unresolved_telemetry_to_error_topic(
         password=local_platform_stack.mqtt_password,
         topic=scope.point_topic("knx_main", point.point_key, "event"),
         payload={
-            "message_type": "wm.telemetry.event.v1",
+            "message_type": "idp.edge.telemetry.event.v1",
             "tenant_id": bundle.tenant_id,
             "event_id": "bad-source-config-revision",
             "event_type": "telemetry.sample",
@@ -222,24 +222,24 @@ def test_mqtt_to_kafka_ingestion_routes_unresolved_telemetry_to_error_topic(
     )
 
     kafka_key, kafka_payload = local_platform_stack.consume_kafka_json(
-        "wm.platform.ingestion.errors.v1",
+        "idp.ingestion.errors.v1",
         expected_key=(
-            f"{bundle.asset_id}|{bundle.agent_id}|knx_main|wm.telemetry.event.v1"
+            f"{bundle.asset_id}|{bundle.agent_id}|knx_main|idp.edge.telemetry.event.v1"
         ),
     )
     _assert_schema_subset(
         kafka_payload,
-        KAFKA_SCHEMAS_ROOT / "wm.platform.ingestion.error.v1.schema.json",
+        KAFKA_SCHEMAS_ROOT / "idp.ingestion.error.v1.schema.json",
     )
     assert kafka_key == (
-        f"{bundle.asset_id}|{bundle.agent_id}|knx_main|wm.telemetry.event.v1"
+        f"{bundle.asset_id}|{bundle.agent_id}|knx_main|idp.edge.telemetry.event.v1"
     )
-    assert kafka_payload["message_type"] == "wm.platform.ingestion.error.v1"
+    assert kafka_payload["message_type"] == "idp.ingestion.error.v1"
     assert kafka_payload["reason_code"] == "source_config_revision_missing"
     assert kafka_payload["mqtt_topic"] == scope.point_topic(
         "knx_main", point.point_key, "event"
     )
-    assert kafka_payload["message_type_in"] == "wm.telemetry.event.v1"
+    assert kafka_payload["message_type_in"] == "idp.edge.telemetry.event.v1"
     assert kafka_payload["asset_id"] == bundle.asset_id
     assert kafka_payload["agent_id"] == bundle.agent_id
     assert kafka_payload["source_id"] == "knx_main"
@@ -250,7 +250,7 @@ def test_mqtt_to_kafka_status_ingestion_does_not_require_config_cache(
     local_platform_stack,
 ) -> None:
     scope = TopicScope(
-        topic_root="wm/v1",
+        topic_root="idp/v1",
         asset_id="demo-stand-01",
         agent_id="demo-stand-local",
     )
@@ -262,7 +262,7 @@ def test_mqtt_to_kafka_status_ingestion_does_not_require_config_cache(
         password=local_platform_stack.mqtt_password,
         topic=scope.source_status_topic("knx_main"),
         payload={
-            "message_type": "wm.source.connection.v1",
+            "message_type": "idp.edge.source.connection.v1",
             "tenant_id": "demo-tenant",
             "state": "connected",
             "ts": "2026-05-02T12:00:00Z",
@@ -276,7 +276,7 @@ def test_mqtt_to_kafka_status_ingestion_does_not_require_config_cache(
         password=local_platform_stack.mqtt_password,
         topic=scope.agent_lwt_topic(),
         payload={
-            "message_type": "wm.agent.lwt.v1",
+            "message_type": "idp.edge.agent.lwt.v1",
             "tenant_id": "demo-tenant",
             "status": "online",
             "ts": "2026-05-02T12:00:00Z",
@@ -285,24 +285,24 @@ def test_mqtt_to_kafka_status_ingestion_does_not_require_config_cache(
     )
 
     source_key, source_payload = local_platform_stack.consume_kafka_json(
-        "wm.platform.source.connections.v1",
+        "idp.source.connections.v1",
         expected_key="demo-tenant|demo-stand-01|demo-stand-local|knx_main",
     )
     _assert_schema_subset(
         source_payload,
-        KAFKA_SCHEMAS_ROOT / "wm.platform.source.connection.v1.schema.json",
+        KAFKA_SCHEMAS_ROOT / "idp.source.connection.v1.schema.json",
     )
     assert source_key == "demo-tenant|demo-stand-01|demo-stand-local|knx_main"
     assert source_payload["tenant_id"] == "demo-tenant"
     assert source_payload["state"] == "connected"
 
     agent_key, agent_payload = local_platform_stack.consume_kafka_json(
-        "wm.platform.agent.status.v1",
+        "idp.agent.status.v1",
         expected_key="demo-tenant|demo-stand-01|demo-stand-local",
     )
     _assert_schema_subset(
         agent_payload,
-        KAFKA_SCHEMAS_ROOT / "wm.platform.agent.status.v1.schema.json",
+        KAFKA_SCHEMAS_ROOT / "idp.agent.status.v1.schema.json",
     )
     assert agent_key == "demo-tenant|demo-stand-01|demo-stand-local"
     assert agent_payload["tenant_id"] == "demo-tenant"
@@ -390,7 +390,7 @@ def _matches_json_type(value: object, expected_type: object) -> bool:
 def _seed_config_delivery_records(*, local_stack, bundle) -> None:
     settings = type("BundleSettings", (), {"bundle": bundle})()
     scope = TopicScope(
-        topic_root="wm/v1",
+        topic_root="idp/v1",
         asset_id=bundle.asset_id,
         agent_id=bundle.agent_id,
     )
@@ -401,11 +401,11 @@ def _seed_config_delivery_records(*, local_stack, bundle) -> None:
         source_id=None,
         source_config_revision=None,
         target_mqtt_topic=scope.agent_runtime_config_topic(),
-        payload_message_type="wm.edge.agent-runtime-config.v1",
+        payload_message_type="idp.edge.agent-runtime-config.v1",
         payload=agent_runtime_payload,
     )
     local_stack.produce_kafka_text(
-        "wm.platform.edge.configs.v1",
+        "idp.edge.configs.v1",
         json.dumps(runtime_record, ensure_ascii=True, separators=(",", ":")),
         key=f"{bundle.tenant_id}|{bundle.asset_id}|{bundle.agent_id}|agent_runtime",
     )
@@ -424,11 +424,11 @@ def _seed_config_delivery_records(*, local_stack, bundle) -> None:
             source_id=source.source_id,
             source_config_revision=source.source_config_revision,
             target_mqtt_topic=source_topic,
-            payload_message_type="wm.edge.source-config.v1",
+            payload_message_type="idp.edge.source-config.v1",
             payload=source_payload,
         )
         local_stack.produce_kafka_text(
-            "wm.platform.edge.configs.v1",
+            "idp.edge.configs.v1",
             json.dumps(source_record, ensure_ascii=True, separators=(",", ":")),
             key=(
                 f"{bundle.tenant_id}|{bundle.asset_id}|{bundle.agent_id}"
@@ -454,7 +454,7 @@ def _config_delivery_record(
 ) -> dict[str, object]:
     idempotency_scope = config_scope.replace(":", "|")
     return {
-        "message_type": "wm.platform.edge.config.delivery.v1",
+        "message_type": "idp.edge.config.delivery.v1",
         "tenant_id": bundle.tenant_id,
         "asset_id": bundle.asset_id,
         "agent_id": bundle.agent_id,
@@ -517,8 +517,8 @@ def _write_bootstrap_config(
                 "enabled": True,
                 "version": "5.0",
                 "broker": broker,
-                "topic_root": "wm/v1",
-                "client_id_prefix": "wm-edge-agent-it",
+                "topic_root": "idp/v1",
+                "client_id_prefix": "edge-telemetry-agent-it",
                 "username_env": "MQTT_USERNAME",
                 "password_env": "MQTT_PASSWORD",
                 "qos": 1,

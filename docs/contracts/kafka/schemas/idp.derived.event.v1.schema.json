@@ -1,0 +1,93 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/kafka/idp.derived.event.v1.schema.json",
+    "title": "idp.derived.event.v1",
+    "description": "Derived event from Streaming Analytics.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "derived_event_id",
+        "idempotency_key",
+        "asset_id",
+        "event_type",
+        "ts",
+        "produced_at",
+        "value_type",
+        "value"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.derived.event.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "derived_event_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "idempotency_key": {
+            "type": "string",
+            "minLength": 1
+        },
+        "asset_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "rule_or_metric_id": {
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        "event_type": {
+            "type": "string",
+            "minLength": 1
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "produced_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "value_type": {
+            "type": "string",
+            "enum": [
+                "boolean",
+                "number",
+                "string"
+            ]
+        },
+        "value": {
+            "type": [
+                "boolean",
+                "number",
+                "string",
+                "null"
+            ]
+        },
+        "source_event_ids": {
+            "type": "array",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            }
+        },
+        "attributes": {
+            "type": "object",
+            "additionalProperties": {
+                "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                ]
+            }
+        }
+    }
+}

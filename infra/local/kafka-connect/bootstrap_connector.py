@@ -34,13 +34,13 @@ def _render_config(path: Path) -> dict[str, Any]:
     defaults = {
         "KAFKA_CONNECTOR_NAME": os.getenv(
             "KAFKA_CONNECTOR_NAME",
-            "wm-clickhouse-telemetry-store-v1",
+            "idp-telemetry-store-telemetry-store-v1",
         ),
         "CLICKHOUSE_CONNECT_HOST": os.getenv("CLICKHOUSE_CONNECT_HOST", "clickhouse"),
         "CLICKHOUSE_CONNECT_PORT": os.getenv("CLICKHOUSE_CONNECT_PORT", "8123"),
         "CLICKHOUSE_CONNECT_SSL": os.getenv("CLICKHOUSE_CONNECT_SSL", "false"),
-        "CLICKHOUSE_DATABASE": os.getenv("CLICKHOUSE_DATABASE", "wm"),
-        "CLICKHOUSE_USER": os.getenv("CLICKHOUSE_USER", "wm"),
+        "CLICKHOUSE_DATABASE": os.getenv("CLICKHOUSE_DATABASE", "idp"),
+        "CLICKHOUSE_USER": os.getenv("CLICKHOUSE_USER", "idp"),
         "CLICKHOUSE_PASSWORD": os.getenv(
             "CLICKHOUSE_PASSWORD",
             "change-me-local-clickhouse",

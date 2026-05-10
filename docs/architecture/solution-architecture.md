@@ -1,16 +1,20 @@
 # Архитектура универсального решения для промышленного сбора и мониторинга
 
-Дата: 2026-05-03
+Дата: 2026-05-10
 Статус: working draft
 
 ## Назначение
 
-Цель решения: развернуть на объекте `Edge Telemetry Agent`, который подключается к полевым протоколам и локальным системам автоматизации, получает телеметрию, нормализует значения, фильтрует шум, буферизует события при недоступности внешнего контура и отправляет данные в `Monitoring & Alarm Platform` в `self-hosted` инсталляции или в облаке/интернете.
+Цель решения: развернуть на объекте `Edge Telemetry Agent`, который подключается
+к полевым протоколам и локальным системам автоматизации, получает телеметрию,
+нормализует значения, фильтрует шум, буферизует события при недоступности
+внешнего контура и отправляет данные в `Industrial Data Platform` в
+`self-hosted` инсталляции или в облаке/интернете.
 
 Целевой контур должен поддерживать не только `KNX`, но и `OPC UA`, `Modbus`, а
 также другие PLC/SCADA-интеграции через southbound-адаптеры. Следующий
 выбранный post-MVP protocol track после `KNX` — `OPC UA read-only ingestion`:
-`wm_edge_agent` работает как `OPC UA client` и только считывает данные из
+`edge_telemetry_agent` работает как `OPC UA client` и только считывает данные из
 `OPC UA server`.
 
 Текущий практический фокус проекта: демо-стенд `KNX` как первый реализуемый адаптер и MVP без управляющих действий в production data path.
@@ -21,9 +25,9 @@ slice `MQTT -> Redpanda Connect -> Apache Kafka`. Более широкая plat
 документе остается целевой post-MVP эволюцией.
 
 Поверх этого baseline в текущей ветке уже реализованы первые локальные
-platform-foundation slices: `Config Registry` на `PostgreSQL`, Kafka-first
+data-platform foundation slices: `Config Registry` на `PostgreSQL`, Kafka-first
 config delivery projection, `ClickHouse Telemetry Store` path и `Grafana`
-read-model surface.
+read-model surface как первый `Web Monitoring Module` surface.
 
 Первый post-MVP пилот запускается cloud-first в российском облаке (`VK Cloud`
 или `Yandex Cloud`). On-prem/self-hosted остается целевым deployment mode
@@ -34,26 +38,30 @@ read-model surface.
 В контуре этого решения:
 
 - `Edge Telemetry Agent`, разворачиваемый непосредственно на объекте
-- `Monitoring & Alarm Platform`, разворачиваемая как `self-hosted` инсталляция или в облаке/интернете
+- `Industrial Data Platform`, разворачиваемая как `self-hosted` инсталляция или в облаке/интернете
+- `Web Monitoring Module`, отдельный модуль dashboards/history/read UI поверх data platform
+- `Alarm Management Module`, отдельный модуль правил, lifecycle и notifications поверх data platform
 - подключение к полевым шлюзам, контроллерам и промышленным интерфейсам в локальной сети объекта
 - сбор входящих событий и выборочное чтение известных тегов/адресов/регистров
 - декодирование полезной нагрузки по известной протокольной модели
 - нормализация в единый формат событий
 - фильтрация событий по правилам `change_threshold`
 - локальный буфер исходящих сообщений
-- доставка событий в центральную платформу по `MQTT 5.0`
-- централизованное хранение телеметрии и истории `alarm`
-- операторские панели мониторинга, `alarm`-логика и маршрутизация уведомлений
+- доставка событий в `Industrial Data Platform` по `MQTT 5.0`
+- централизованное хранение телеметрии, service events, source config snapshots,
+  derived events и storage sink для истории `alarm`
+- операторские панели мониторинга в `Web Monitoring Module`
+- `alarm`-логика и маршрутизация уведомлений в `Alarm Management Module`
 - эксплуатационные логи, health-события и базовые метрики
 
 Вне контура:
 
 - автоматическое и полное discovery всех сущностей, тегов и моделей данных без исходной карты адресов
 - бизнес-логика управления оборудованием
-- управляющие команды из web-monitoring UI/API
+- управляющие команды из Web Monitoring UI/API
 - долгосрочное хранение телеметрии на edge-узле
 - полноценная SCADA/HMI для управляющего контура
-- расширенная аналитика и отчетность вне базового monitoring/alarm-контура
+- расширенная аналитика и отчетность вне базового data-platform и module scope
 - реализация всех protocol-specific security modes в MVP
 - внешние провайдеры доставки email/SMS/push/webhook
 
@@ -65,26 +73,29 @@ Source of truth для `C1/C2` и следующих уровней декомп
 
 - `C1`: `arch/likec4/views.c4` -> `c1-system-context`
 - `C2`: `arch/likec4/systems/edge-telemetry-agent/views.c4` -> `c2-edge-telemetry-agent-containers`
-- `C2`: `arch/likec4/systems/monitoring-alarm-platform/views.c4` -> `c2-monitoring-alarm-platform-containers`
+- `C2`: `arch/likec4/systems/industrial-data-platform/views.c4` -> `c2-industrial-data-platform-containers`
+- `C2`: `arch/likec4/systems/web-monitoring-module/views.c4` -> `c2-web-monitoring-module-containers`
+- `C2`: `arch/likec4/systems/alarm-management-module/views.c4` -> `c2-alarm-management-module-containers`
 
 Ключевые внешние взаимодействия:
 
-- `Service engineer` взаимодействует и с `Edge Telemetry Agent`, и с `Monitoring & Alarm Platform`.
+- `Service engineer` взаимодействует с `Edge Telemetry Agent`, `Industrial Data Platform`, `Web Monitoring Module` и `Alarm Management Module`.
 - `Edge Telemetry Agent` работает в локальной сети объекта рядом с источниками данных.
-- `Monitoring & Alarm Platform` принимает события от edge-агентов и работает как центральная система в `self-hosted` инсталляции или в облаке/интернете.
-- `Operator` и `Dispatcher` работают только через центральную платформу, а не напрямую с edge-узлом.
-- `Notification channels` остаются внешней системой относительно нашей платформы.
+- `Industrial Data Platform` принимает события от edge-агентов и работает как центральное ядро сбора/хранения данных в `self-hosted` инсталляции или в облаке/интернете.
+- `Operator` работает через `Web Monitoring Module` и, если разрешено ролью, через `Alarm Management Module`.
+- `Dispatcher` работает через `Alarm Management Module` и диспетчерские monitoring screens.
+- `Notification channels` остаются внешней системой относительно `Alarm Management Module`.
 
 ## Основные архитектурные принципы
 
 - Edge-first. Сборщик работает в сети объекта и не зависит от постоянной доступности внешнего контура.
-- Read-only by default. В production data path web-monitoring контура сервис
+- Read-only by default. В production data path data-platform контура сервис
   читает и наблюдает сигналы, но не отправляет управляющие команды из web UI/API.
-- Server-issued config. Все известные точки, `value_model`, параметры чтения и правила публикации приходят в wm-edge-agent как retained agent runtime/source configs; целевой поток доставки: PostgreSQL config revisions -> config outbox -> Kafka -> Redpanda Connect -> MQTT retained topics.
+- Server-issued config. Все известные точки, `value_model`, параметры чтения и правила публикации приходят в edge-telemetry-agent как retained agent runtime/source configs; целевой поток доставки: PostgreSQL config revisions -> config outbox -> Kafka -> Redpanda Connect -> MQTT retained topics.
 - Hybrid acquisition. Основной поток данных приходит из event/listen режима там, где он поддерживается; активное чтение включается только для whitelist endpoints.
 - Loose coupling. Протокольная интеграция, правила фильтрации и доставка во внешний контур разделены по компонентам.
 - Fail-safe degradation. При потере backend события не теряются сразу, а уходят в локальный Delivery Outbox.
-- Deployment parity. `self-hosted` и `cloud` рассматриваются как два deployment mode одной платформы; baseline contracts, основной data path и operational model должны оставаться максимально одинаковыми.
+- Deployment parity. `self-hosted` и `cloud` рассматриваются как два deployment mode одной `Industrial Data Platform` с модулями поверх нее; baseline contracts, основной data path и operational model должны оставаться максимально одинаковыми.
 - Cloud-first pilot. Первый пилот идет в российском облаке; self-hosted/on-prem
   не должен получать отдельную архитектуру и возвращается как deployment mode
   после cloud validation.
@@ -103,10 +114,11 @@ Source of truth для `C1/C2` и следующих уровней декомп
 - публиковать аналоговые сигналы по достижению порога изменения
 - логировать события связи, декодирования и доставки
 - буферизовать неотправленные события локально
-- принимать `MQTT` telemetry events и status topics в центральной платформе; retained agent runtime/source configs являются delivery projection для wm-edge-agent
-- хранить телеметрию, source config snapshots и историю `alarm`
-- выполнять правила `alarm` и маршрутизировать уведомления
-- предоставлять операторский UI и backend API для мониторинга и работы с `alarm`
+- принимать `MQTT` telemetry events и status topics в `Industrial Data Platform`; retained agent runtime/source configs являются delivery projection для edge-telemetry-agent
+- хранить телеметрию, source config snapshots, service history, derived events и storage sink для истории `alarm`
+- предоставлять read models и registry/config metadata прикладным модулям
+- выполнять правила `alarm` и маршрутизировать уведомления в отдельном `Alarm Management Module`
+- предоставлять dashboards/history/operator read UI в отдельном `Web Monitoring Module`
 
 ## Нефункциональные требования
 
@@ -127,32 +139,36 @@ Source of truth для `C1/C2` и следующих уровней декомп
 На уровне `C2` сейчас зафиксированы:
 
 - `Edge Telemetry Agent`: `Bootstrap Configuration`, `Collector Runtime`, `Local State Store`, `Delivery Worker`
-- `Monitoring & Alarm Platform`: `MQTT Ingestion Gateway`, `Redpanda Connect`, `Kafka-compatible Broker Runtime`, `Kafka Event Log`, `Source Config Snapshot Projector`, `Telemetry Consumers`, `Streaming Analytics`, `Telemetry Store`, `Platform Store`, `Alarm Rule Engine`, `Platform API`, `Platform Frontend`, `Keycloak`, `Grafana`, `Notification Service`
+- `Industrial Data Platform`: `MQTT Ingestion Gateway`, `Redpanda Connect`, `Kafka-compatible Broker Runtime`, `Kafka Event Log`, `Source Config Snapshot Projector`, `Telemetry Store Writer`, `Streaming Analytics`, `Telemetry Store`, `Platform Store`, `Config Registry`, `Keycloak`
+- `Web Monitoring Module`: `Grafana`, future `Web Monitoring Frontend`
+- `Alarm Management Module`: `Alarm Rule Engine`, `Notification Service`
 
-### Поток данных в Monitoring & Alarm Platform
+### Поток данных в Industrial Data Platform
 
 Целевой production-поток следующего этапа поверх текущего `MVP`:
 
 1. `Config Registry` хранит rendered agent runtime/source config revisions в PostgreSQL и создает `config_outbox` record.
-2. `Config Event Publisher` публикует `wm.platform.edge.config.delivery.v1` records в Kafka topic `wm.platform.edge.configs.v1`.
-3. `Redpanda Connect` материализует config delivery records в retained MQTT agent runtime/source topics; wm-edge-agent получает `tenant_id`, `asset_id`, `sources` и `points` из этих retained configs.
-4. `Source Config Snapshot Projector` строит `wm.platform.source.configs.v1` из `wm.platform.edge.configs.v1`; retained MQTT source configs не являются authoritative Kafka ingress для source config snapshots.
+2. `Config Event Publisher` публикует `idp.edge.config.delivery.v1` records в Kafka topic `idp.edge.configs.v1`.
+3. `Redpanda Connect` материализует config delivery records в retained MQTT agent runtime/source topics; edge-telemetry-agent получает `tenant_id`, `asset_id`, `sources` и `points` из этих retained configs.
+4. `Source Config Snapshot Projector` строит `idp.source.configs.v1` из `idp.edge.configs.v1`; retained MQTT source configs не являются authoritative Kafka ingress для source config snapshots.
 5. `Edge Telemetry Agent` в текущем runtime baseline публикует telemetry events по `MQTT 5.0`; source connection status, config status и agent LWT/status остаются target contracts следующей runtime-фазы.
 6. `MQTT Ingestion Gateway` принимает MQTT-поток, валидирует payload и восстанавливает routing context.
 7. `Redpanda Connect` подписывается на MQTT topics через `mqtt` input.
-8. `Redpanda Connect` применяет mapping/transform pipeline по контракту `wm.platform-ingestion.mqtt-to-kafka.v1`, валидирует `tenant_id` claim и пишет canonical records в Kafka-compatible broker через `redpanda` output component.
-9. `Kafka-compatible Broker Runtime` хранит и обслуживает `Kafka Event Log` по контракту `wm.kafka.topics.v1`. Локальный MVP использует `Apache Kafka`; `Redpanda broker` остается candidate после отдельного compatibility PoC.
-10. `Telemetry Consumers` читают Kafka topics и записывают raw/canonical telemetry events, source config snapshots, source connection history и agent status history в `Telemetry Store` на базе `ClickHouse` по контракту `wm.clickhouse.telemetry-store.v1`.
-11. `Streaming Analytics` читает Kafka topics, при необходимости читает исторический контекст из `Telemetry Store`, рассчитывает агрегаты и производные признаки, записывает результаты в `Telemetry Store` и передает derived events в `Alarm Rule Engine`.
-12. `Alarm Rule Engine` обрабатывает telemetry и derived events по правилам, пишет immutable alarm history в `Telemetry Store`, хранит current alarm state и operator workflow state в `Platform Store` на базе `PostgreSQL` и инициирует уведомления.
-13. `Grafana` читает dashboards из `Telemetry Store`; `Platform API` читает `Telemetry Store` для истории/графиков и `Platform Store` для конфигурации, правил и текущего состояния; `Platform Frontend` работает через `Platform API`.
+8. `Redpanda Connect` применяет mapping/transform pipeline по контракту `idp.ingestion.mqtt-to-kafka.v1`, валидирует `tenant_id` claim и пишет canonical records в Kafka-compatible broker через `redpanda` output component.
+9. `Kafka-compatible Broker Runtime` хранит и обслуживает `Kafka Event Log` по контракту `idp.kafka.topics.v1`. Локальный MVP использует `Apache Kafka`; `Redpanda broker` остается candidate после отдельного compatibility PoC.
+10. `Telemetry Store Writer` / Kafka Connect читают Kafka topics и записывают raw/canonical telemetry events, source config snapshots, source connection history и agent status history в `Telemetry Store` на базе `ClickHouse` по контракту `idp.telemetry-store.clickhouse.telemetry-store.v1`.
+11. `Streaming Analytics` читает Kafka topics, при необходимости читает исторический контекст из `Telemetry Store`, рассчитывает агрегаты и производные признаки, записывает результаты в `Telemetry Store` и публикует derived events для прикладных модулей.
+12. `Web Monitoring Module` читает dashboards/history/latest read models из `Telemetry Store` и registry/config metadata из data-platform backend.
+13. `Alarm Management Module` читает telemetry/status/derived streams, обрабатывает правила, пишет immutable alarm history в `Telemetry Store`, хранит current alarm state и operator workflow state в `Platform Store` на базе `PostgreSQL` и инициирует уведомления.
 
-### Хранилища данных Monitoring & Alarm Platform
+### Хранилища данных Industrial Data Platform
 
-Решение по persistence зафиксировано в `ADR-007`.
+Активное решение по persistence кратко зафиксировано в
+`docs/architecture/decisions.md`; contract-level детали находятся в
+`docs/contracts/`.
 
-- `Telemetry Store` — `ClickHouse`, authoritative analytical store для append-only telemetry events, source config snapshots, source connection history, agent status history, derived events, aggregates, rollups и immutable alarm history.
-- `Platform Store` — `PostgreSQL`, transactional store для assets, agents, sources, point registry, alarm rules, notification policies, current alarm state, acknowledgements, mutes, audit и Keycloak persistence.
+- `Telemetry Store` — `ClickHouse`, authoritative analytical store для append-only telemetry events, source config snapshots, source connection history, agent status history, derived events, aggregates, rollups и immutable alarm history. `alarm_history_events_v1` остается storage sink, но writer/owner потока находится в `Alarm Management Module`.
+- `Platform Store` — `PostgreSQL`, transactional store для assets, agents, sources, point registry, shared platform state, module workflow state, audit и Keycloak persistence.
 - `Kafka-compatible Broker Runtime` и `Kafka Event Log` являются streaming/replay слоем и не заменяют долговременное хранилище платформы.
 
 Source of truth для ingestion, Kafka topics, ClickHouse contracts и migrations
@@ -165,7 +181,7 @@ Source of truth для ingestion, Kafka topics, ClickHouse contracts и migratio
 | Компонент | Ответственность |
 | --- | --- |
 | `Bootstrap Config Loader` | Загружает минимальную локальную конфигурацию запуска: `agent_id`, MQTT endpoint, credentials/secret refs, local storage и observability |
-| `Retained Config Loader` | Получает `wm.edge.agent-runtime-config.v1` и `wm.edge.source-config.v1` из MQTT, валидирует revision и собирает agent runtime config |
+| `Retained Config Loader` | Получает `idp.edge.agent-runtime-config.v1` и `idp.edge.source-config.v1` из MQTT, валидирует revision и собирает agent runtime config |
 | `Southbound Connection Manager` | Устанавливает протокольные соединения, отслеживает состояние каналов, выполняет reconnect |
 | `Protocol Event Listener` | Получает входящие события, выделяет endpoint, направление и raw payload |
 | `Selective Read Scheduler` | Выполняет `read_on_start` и `periodic_read` только по whitelist endpoints |
@@ -183,18 +199,19 @@ Source of truth для ingestion, Kafka topics, ClickHouse contracts и migratio
 
 - один edge-узел в той же L2/L3-сети, что и полевые шлюзы/контроллеры
 - `Edge Telemetry Agent` работает на этом узле как локальный edge runtime
-- `Monitoring & Alarm Platform` работает как центральная система в `self-hosted` инсталляции или в облаке/интернете
-- первый post-MVP пилот центральной платформы работает cloud-first в российском
+- `Industrial Data Platform` работает как центральное ядро в `self-hosted` инсталляции или в облаке/интернете
+- `Web Monitoring Module` и `Alarm Management Module` разворачиваются поверх того же data-platform baseline
+- первый post-MVP пилот `Industrial Data Platform` работает cloud-first в российском
   облаке (`VK Cloud` или `Yandex Cloud`)
 - on-prem/self-hosted deployment не входит в первый пилот, но остается целевым
   mode после cloud validation
 - локальный `docker compose` stack остается обязательным dev/test baseline
 - конфиги монтируются read-only
 - `SQLite Local State Store` хранится на локальном диске edge-узла
-- наружу открыт только исходящий `MQTT/TLS` к monitoring broker
+- наружу открыт только исходящий `MQTT/TLS` к data-platform ingestion broker
 - входящие публичные порты на edge-узле не требуются, кроме опционального health/metrics в локальном сегменте
 
-### Deployment modes центральной платформы
+### Deployment modes Industrial Data Platform
 
 - `cloud-first pilot`: первый пилот разворачивается в `VK Cloud` или
   `Yandex Cloud`; provider-specific детали не должны менять contracts, topics,
@@ -218,20 +235,22 @@ Source of truth для ingestion, Kafka topics, ClickHouse contracts и migratio
 - он не считается целевой production-схемой
 - versioned edge profile для этого сценария должен использовать отдельный remote-profile, а не production-like local-on-site profile
 
-### Grafana в MVP и production
+### Web Monitoring в MVP и production
 
-`Grafana` рассматривается как часть `Monitoring & Alarm Platform` и остается в
-production-контуре как слой визуализации.
+`Grafana` рассматривается как первый реализованный surface
+`Web Monitoring Module` и остается в production-контуре как read-only слой
+визуализации поверх data platform.
 
 В целевом production-контуре `Grafana` читает подготовленные данные из
 `Telemetry Store` на базе `ClickHouse`, а не является consumer-ом исходного MQTT-потока.
 
 Ограничения текущего MVP-среза:
 
-- локальный demo/integration flow ограничен `KNX -> wm_edge_agent -> MQTT`
+- локальный demo/integration flow ограничен `KNX -> edge_telemetry_agent -> MQTT`
 - Grafana не входит в текущий обязательный demo surface
-- alarm-логика, история и richer backend-возможности принадлежат
-  `Monitoring & Alarm Platform`
+- alarm-логика, история и richer backend-возможности принадлежат отдельному
+  `Alarm Management Module`; data platform предоставляет storage/event-log
+  boundary для этих записей
 
 ## Основные runtime-сценарии
 
@@ -239,7 +258,7 @@ production-контуре как слой визуализации.
 
 1. Сервис загружает `edge.bootstrap-config.v1`.
 2. Подключается к MQTT broker и подписывается на retained agent runtime/source config topics.
-3. Получает `wm.edge.agent-runtime-config.v1`, затем `wm.edge.source-config.v1` для каждого активного `source_id`.
+3. Получает `idp.edge.agent-runtime-config.v1`, затем `idp.edge.source-config.v1` для каждого активного `source_id`.
 4. Валидирует `tenant_id`, `asset_id`, `config_revision` и `source_config_revision`; публикация `status/config` остается target contract следующей runtime-фазы.
 5. Поднимает southbound-соединение для активных адаптеров.
 6. Выполняет `read_on_start` по разрешенным endpoints.
@@ -289,14 +308,16 @@ production-контуре как слой визуализации.
 - `value_raw`
 - `quality`
 
-Подробный контракт вынесен в `docs/contracts/wm-edge-agent/`.
+Подробный контракт вынесен в `docs/contracts/edge-telemetry-agent/`.
 
 ## MQTT status topics и operational logs
 
-Во внешний контур публикуются только те status topics, которые зафиксированы transport-контрактом в `ADR-005`:
+Во внешний контур публикуются только те status topics, которые зафиксированы
+transport-контрактом в
+`docs/contracts/edge-telemetry-agent/mqtt-topic-tree.v1.md`:
 
-- `wm/v1/assets/{asset_id}/agents/{agent_id}/sources/{source_id}/status/connection`
-- `wm/v1/assets/{asset_id}/agents/{agent_id}/status/lwt`
+- `idp/v1/assets/{asset_id}/agents/{agent_id}/sources/{source_id}/status/connection`
+- `idp/v1/assets/{asset_id}/agents/{agent_id}/status/lwt`
 
 Во внутренних operational logs дополнительно полезны:
 
@@ -312,11 +333,11 @@ production-контуре как слой визуализации.
 
 - сервис располагается в локальной сети объекта, рядом с полевыми шлюзами и контроллерами
 - прямой внешний доступ к промышленным southbound-интерфейсам не используется как штатный production-сценарий
-- в проде запрещены управляющие команды из web-monitoring UI/API
+- в проде запрещены управляющие команды из Web Monitoring UI/API
 - запрет на управляющие команды не относится к техническим platform writes:
   telemetry/status storage, config revisions, outbox, audit и alarm workflow
   state
-- если для отдельного проекта вводится внешний `OPC`-мост с write-path в `KNX`, он должен рассматриваться как отдельный сервис вне текущего web-monitoring контура
+- если для отдельного проекта вводится внешний `OPC`-мост с write-path в `KNX`, он должен рассматриваться как отдельный сервис вне текущего data-platform и Web Monitoring контуров
 - токены/секреты доставки не хранятся plain text в retained source config или YAML config bundle, а передаются через secret refs или отдельный защищенный secret flow
 
 Целевой roadmap безопасности:
@@ -361,15 +382,10 @@ production-контуре как слой визуализации.
 - `arch/README.md`
 - `docs/architecture/glossary.md`
 - `docs/contracts/README.md`
-- `docs/contracts/wm-edge-agent/`
-- `apps/wm_edge_agent/docs/data-contracts.md`
-- `apps/wm_edge_agent/docs/mqtt-topics.md`
+- `docs/contracts/edge-telemetry-agent/`
+- `apps/edge_telemetry_agent/docs/data-contracts.md`
+- `apps/edge_telemetry_agent/docs/mqtt-topics.md`
 - `docs/architecture/open-questions.md`
-- `docs/architecture/adrs/ADR-001-runtime-topology.md`
-- `docs/architecture/adrs/ADR-002-acquisition-mode.md`
-- `docs/architecture/adrs/ADR-003-buffering-and-delivery.md`
-- `docs/architecture/adrs/ADR-004-universal-agent-configuration.md`
-- `docs/architecture/adrs/ADR-005-mqtt-event-transport.md`
-- `docs/architecture/adrs/ADR-007-monitoring-platform-data-stores.md`
-- `docs/architecture/adrs/ADR-008-server-issued-edge-runtime-configuration.md`
-- `docs/contracts/wm-edge-agent/config-bundle.v1.md`
+- `docs/architecture/decisions.md`
+- `docs/architecture/adrs/archive/`
+- `docs/contracts/edge-telemetry-agent/config-bundle.v1.md`

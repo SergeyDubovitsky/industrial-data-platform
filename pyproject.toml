@@ -1,14 +1,14 @@
 [project]
-name = "web-monitoring"
+name = "industrial-data-platform"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "wm-edge-agent",
-    "wm-knx-demo",
-    "wm-config-registry",
-    "wm-knx-parser",
-    "wm-demo-stack",
-    "wm-clickhouse",
+    "edge-telemetry-agent",
+    "knx-demo",
+    "idp-config-registry",
+    "knx-project-parser",
+    "idp-demo-stack",
+    "idp-telemetry-store",
 ]
 
 [dependency-groups]
@@ -29,12 +29,12 @@ coverage = [
 package = false
 
 [tool.uv.sources]
-wm-edge-agent = { workspace = true }
-wm-knx-demo = { workspace = true }
-wm-config-registry = { workspace = true }
-wm-knx-parser = { workspace = true }
-wm-demo-stack = { workspace = true }
-wm-clickhouse = { workspace = true }
+edge-telemetry-agent = { workspace = true }
+knx-demo = { workspace = true }
+idp-config-registry = { workspace = true }
+knx-project-parser = { workspace = true }
+idp-demo-stack = { workspace = true }
+idp-telemetry-store = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -51,18 +51,20 @@ markers = [
     "integration_storage: Kafka to ClickHouse storage integration checks",
     "integration_config_delivery: Config Registry to Kafka/MQTT delivery checks",
     "integration_grafana: Grafana and ClickHouse dashboard integration checks",
+    "integration_data_platform: Industrial Data Platform integration checks",
+    "integration_web_monitoring: Web Monitoring Module integration checks",
 ]
 
 [tool.ruff]
 line-length = 88
 target-version = "py312"
 src = [
-    "apps/wm_edge_agent/src",
-    "apps/wm_knx_demo/src",
-    "apps/wm_config_registry/src",
-    "libs/wm_knx_parser/src",
-    "libs/wm_demo_stack/src",
-    "tools/wm_clickhouse_migrations/src",
+    "apps/edge_telemetry_agent/src",
+    "apps/knx_demo/src",
+    "apps/idp_config_registry/src",
+    "libs/knx_project_parser/src",
+    "libs/idp_demo_stack/src",
+    "tools/idp_telemetry_store/src",
     "tests",
 ]
 
@@ -73,12 +75,12 @@ extend-select = ["I"]
 branch = true
 relative_files = true
 source = [
-    "apps/wm_edge_agent/src/wm_edge_agent",
-    "apps/wm_knx_demo/src/wm_knx_demo",
-    "apps/wm_config_registry/src/wm_config_registry",
-    "libs/wm_knx_parser/src/wm_knx_parser",
-    "libs/wm_demo_stack/src/wm_demo_stack",
-    "tools/wm_clickhouse_migrations/src/wm_clickhouse",
+    "apps/edge_telemetry_agent/src/edge_telemetry_agent",
+    "apps/knx_demo/src/knx_demo",
+    "apps/idp_config_registry/src/idp_config_registry",
+    "libs/knx_project_parser/src/knx_project_parser",
+    "libs/idp_demo_stack/src/idp_demo_stack",
+    "tools/idp_telemetry_store/src/idp_telemetry_store",
 ]
 
 [tool.coverage.report]

@@ -60,18 +60,18 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - package: wm-edge-agent
-                      test_path: apps/wm_edge_agent/tests
-                    - package: wm-knx-demo
-                      test_path: apps/wm_knx_demo/tests
-                    - package: wm-config-registry
-                      test_path: apps/wm_config_registry/tests
-                    - package: wm-knx-parser
-                      test_path: libs/wm_knx_parser/tests
-                    - package: wm-demo-stack
-                      test_path: libs/wm_demo_stack/tests
-                    - package: wm-clickhouse
-                      test_path: tools/wm_clickhouse_migrations/tests
+                    - package: edge-telemetry-agent
+                      test_path: apps/edge_telemetry_agent/tests
+                    - package: knx-demo
+                      test_path: apps/knx_demo/tests
+                    - package: idp-config-registry
+                      test_path: apps/idp_config_registry/tests
+                    - package: knx-project-parser
+                      test_path: libs/knx_project_parser/tests
+                    - package: idp-demo-stack
+                      test_path: libs/idp_demo_stack/tests
+                    - package: idp-telemetry-store
+                      test_path: tools/idp_telemetry_store/tests
 
         steps:
             - name: Checkout

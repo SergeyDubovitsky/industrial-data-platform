@@ -1,0 +1,11 @@
+model {
+    extend alarm-management-module {
+        notification-service = container 'Notification Service' {
+            description 'Маршрутизирует уведомления во внешние каналы по alarm-политикам и правилам эскалации.'
+            technology 'Worker / notification gateway'
+            icon bootstrap:bell
+
+            -> notification-channels 'Отправляет email, SMS, push и webhook-уведомления'
+        }
+    }
+}

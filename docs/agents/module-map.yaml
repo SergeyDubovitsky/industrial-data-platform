@@ -1,0 +1,111 @@
+version: 1
+repo: industrial-data-platform
+canonical_agent_file: AGENTS.md
+compatibility_bridges:
+  - CLAUDE.md
+  - .github/copilot-instructions.md
+source_of_truth:
+  contracts: docs/contracts
+  architecture_model: arch/likec4
+  current_state: docs/architecture/current-state.md
+  glossary: docs/architecture/glossary.md
+  decisions: docs/architecture/decisions.md
+  decision_archive: docs/architecture/adrs/archive
+compatibility_identifiers:
+  python_packages:
+    - edge_telemetry_agent
+    - idp_config_registry
+    - idp_telemetry_store
+  entrypoints:
+    - edge-telemetry-agent
+    - idp-config-registry
+    - idp-telemetry-store
+  mqtt_prefix: idp/v1
+  kafka_prefix: idp
+modules:
+  - id: industrial_data_platform
+    name: Industrial Data Platform
+    status: active
+    paths:
+      - apps/idp_config_registry
+      - tools/idp_telemetry_store
+      - infra/local
+      - docs/contracts/kafka
+      - docs/contracts/clickhouse
+      - docs/contracts/platform-ingestion
+    source_of_truth:
+      - docs/contracts
+      - arch/likec4/systems/industrial-data-platform
+      - docs/architecture/current-state.md
+      - docs/architecture/decisions.md
+    validation:
+      - "uv run --package idp-config-registry pytest apps/idp_config_registry/tests"
+      - "uv run --package idp-telemetry-store pytest tools/idp_telemetry_store/tests"
+      - "uv run --group integration pytest tests/integration/test_config_registry_kafka_publisher.py tests/integration/test_kafka_to_clickhouse_storage.py"
+  - id: edge_telemetry_agent
+    name: Edge Telemetry Agent
+    status: active
+    paths:
+      - apps/edge_telemetry_agent
+      - docs/contracts/edge-telemetry-agent
+      - environments
+    source_of_truth:
+      - docs/contracts/edge-telemetry-agent
+      - arch/likec4/systems/edge-telemetry-agent
+    validation:
+      - "uv run --package edge-telemetry-agent pytest apps/edge_telemetry_agent/tests"
+      - "uv run --group integration pytest tests/integration/test_edge_agent_mqtt_publisher.py tests/integration/test_edge_agent_knx_to_mqtt.py"
+  - id: web_monitoring_module
+    name: Web Monitoring Module
+    status: local_surface
+    paths:
+      - infra/local/grafana
+      - tests/integration/test_grafana_clickhouse.py
+    source_of_truth:
+      - arch/likec4/systems/web-monitoring-module
+      - docs/architecture/current-state.md
+      - docs/architecture/decisions.md
+    validation:
+      - "uv run --group integration pytest tests/integration/test_grafana_clickhouse.py"
+  - id: alarm_management_module
+    name: Alarm Management Module
+    status: planned
+    paths:
+      - arch/likec4/systems/alarm-management-module
+      - docs/contracts/clickhouse/telemetry-store.v1.md
+    source_of_truth:
+      - docs/architecture/current-state.md
+      - docs/architecture/decisions.md
+      - arch/likec4/systems/alarm-management-module
+    validation:
+      - "cd arch && npm run validate"
+    notes:
+      - "Runtime package is intentionally absent until alarm use cases are selected."
+  - id: demo_and_knx_tooling
+    name: Demo and KNX tooling
+    status: active
+    paths:
+      - apps/knx_demo
+      - libs/knx_project_parser
+      - libs/idp_demo_stack
+    source_of_truth:
+      - README.md
+      - environments
+    validation:
+      - "uv run --package knx-demo pytest apps/knx_demo/tests"
+      - "uv run --package knx-project-parser pytest libs/knx_project_parser/tests"
+      - "uv run --group integration pytest libs/idp_demo_stack/tests/test_scenario.py"
+cross_cutting:
+  c4:
+    paths:
+      - arch
+    validation:
+      - "cd arch && npm run validate"
+  lint:
+    validation:
+      - "uv run --group lint ruff check apps libs tests infra tools"
+  docs_only:
+    validation:
+      - "git diff --check"
+      - "uv run --group integration python -c \"import pathlib, yaml; yaml.safe_load(pathlib.Path('docs/agents/module-map.yaml').read_text())\""
+      - "npm --prefix docs-site run build"

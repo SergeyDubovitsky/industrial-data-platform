@@ -1,7 +1,7 @@
 {
   "$schema": "https://likec4.dev/schemas/config.json",
   "name": "industrial-edge-architecture",
-  "title": "Industrial Edge Web Monitoring Architecture",
+  "title": "Industrial Data Platform Architecture",
   "exclude": [
     "**/node_modules/**",
     "**/dist/**"

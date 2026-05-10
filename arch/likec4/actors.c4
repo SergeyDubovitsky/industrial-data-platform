@@ -1,26 +1,28 @@
 model {
     service-engineer = actor 'Сервисный инженер' {
-        description 'Устанавливает wm_edge_agent на объекте, задает bootstrap-параметры подключения к платформе и настраивает источники, точки, alarm и панели через центральный платформенный контур.'
+        description 'Устанавливает edge_telemetry_agent на объекте, задает bootstrap-параметры подключения к платформе и настраивает источники, точки, alarm и панели через отдельные платформенные модули.'
 
         -[interact-with]-> edge-telemetry-agent 'Устанавливает агент и задает bootstrap config: agent_id, MQTT endpoint и credentials refs'
-        -[interact-with]-> monitoring-alarm-platform 'Настраивает источники, точки мониторинга, правила alarm и панели мониторинга'
-        -[interact-with]-> monitoring-alarm-platform.yaml-config-bundle 'Редактирует versioned YAML config bundle с agent runtime/source configs'
-        -[interact-with]-> monitoring-alarm-platform.wm-config-registry-outbox-worker 'Запускает validation/publish retained agent runtime/source configs'
-        -[interact-with]-> monitoring-alarm-platform.grafana 'Настраивает dashboards и проверяет поток телеметрии'
+        -[interact-with]-> industrial-data-platform 'Настраивает tenants, assets, agents, sources, points и config delivery'
+        -[interact-with]-> industrial-data-platform.yaml-config-bundle 'Редактирует versioned YAML config bundle с agent runtime/source configs'
+        -[interact-with]-> industrial-data-platform.idp-config-registry-outbox-worker 'Запускает validation/publish retained agent runtime/source configs'
+        -[interact-with]-> web-monitoring-module.grafana 'Настраивает dashboards и проверяет поток телеметрии'
+        -[interact-with]-> alarm-management-module 'Настраивает правила alarm и проверяет alarm workflow'
     }
 
 
     operator = actor 'Оператор' {
-        description 'Работает с текущим состоянием объекта, live-панелями и событиями через центральную платформу мониторинга.'
+        description 'Работает с текущим состоянием объекта, live-панелями и событиями через Web Monitoring Module.'
 
-        -[interact-with]-> monitoring-alarm-platform 'Работает с панелями мониторинга, событиями и alarm'
-        -[interact-with]-> monitoring-alarm-platform.platform-frontend 'Работает с пользовательским web-интерфейсом платформы'
+        -[interact-with]-> web-monitoring-module 'Работает с панелями мониторинга и историей событий'
+        -[interact-with]-> web-monitoring-module.web-monitoring-frontend 'Работает с пользовательским web-интерфейсом мониторинга'
+        -[interact-with]-> alarm-management-module 'Подтверждает и просматривает alarm workflow, если это разрешено ролью'
     }
 
     dispatcher = actor 'Диспетчер' {
-        description 'Контролирует alarm, уведомления и диспетчерские панели через центральную платформу мониторинга.'
+        description 'Контролирует alarm, уведомления и диспетчерские панели через Alarm Management Module и Web Monitoring Module.'
 
-        -[interact-with]-> monitoring-alarm-platform 'Работает с alarm, уведомлениями и диспетчерскими сценариями'
-        -[interact-with]-> monitoring-alarm-platform.platform-frontend 'Работает с пользовательским web-интерфейсом платформы'
+        -[interact-with]-> alarm-management-module 'Работает с alarm, уведомлениями и диспетчерскими сценариями'
+        -[interact-with]-> web-monitoring-module.web-monitoring-frontend 'Открывает диспетчерские панели и историю объекта'
     }
 }

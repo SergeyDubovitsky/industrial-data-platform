@@ -16,7 +16,9 @@
 - `likec4/gateways/` — модель и `C2` для протокольных шлюзов и SCADA-контроллеров
 - `likec4/external-systems/` — внешние облачные интеграции вроде `SMS`, `Email`, `Push`, `Webhook`
 - `likec4/systems/edge-telemetry-agent/` — C2-модель `Edge Telemetry Agent`
-- `likec4/systems/monitoring-alarm-platform/` — C2-модель `Monitoring & Alarm Platform`
+- `likec4/systems/industrial-data-platform/` — C2-модель `Industrial Data Platform`
+- `likec4/systems/web-monitoring-module/` — C2-модель `Web Monitoring Module`
+- `likec4/systems/alarm-management-module/` — C2-модель `Alarm Management Module`
 
 Системные файлы workspace и LikeC4-исходники разделены:
 
@@ -41,16 +43,18 @@
 - `C2` для `Полевые устройства и контроллеры`
 - `C2` для `Протокольные шлюзы и SCADA-контроллеры`
 - `C2` для `Edge Telemetry Agent`
-- `C2` для `Monitoring & Alarm Platform`
-- `Deployment` для demo-стенда, текущей workstation-based реализации и production-контура Monitoring & Alarm Platform
+- `C2` для `Industrial Data Platform`
+- `C2` для `Web Monitoring Module`
+- `C2` для `Alarm Management Module`
+- `Deployment` для demo-стенда, текущей workstation-based реализации и production-контура Industrial Data Platform с модулями поверх него
 - `View` для текущего monitored scope demo-стенда
 
 На уровне `C1` модель фиксирует:
 
 - внешних акторов: `Сервисный инженер`, `Оператор`, `Диспетчер`
 - внешние системы: полевые устройства, протокольные шлюзы, каналы уведомлений
-- разрабатываемые системы: `Edge Telemetry Agent` на объекте и `Monitoring & Alarm Platform` в облаке/интернете
-- ключевые границы ответственности: edge-сбор на объекте, central monitoring/alarm в облаке, notifications через внешние каналы
+- разрабатываемые системы: `Edge Telemetry Agent` на объекте, `Industrial Data Platform` в облаке/интернете и отдельные модули `Web Monitoring Module` / `Alarm Management Module`
+- ключевые границы ответственности: edge-сбор на объекте, data platform ingestion/storage в облаке, monitoring UI отдельно, alarm workflow отдельно, notifications через внешние каналы
 
 Модель изначально проектируется как универсальная:
 

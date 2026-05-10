@@ -1,0 +1,12 @@
+model {
+    extend industrial-data-platform {
+        telemetry-consumers = container 'Telemetry Store Writer' {
+            description 'Storage writer path Industrial Data Platform: Kafka Connect ClickHouse Sink и/или backend consumers читают Kafka topics idp.kafka.topics.v1 и записывают canonical telemetry/service records в долговременное хранилище.'
+            technology 'Kafka Connect ClickHouse Sink / Kafka consumers / backend workers'
+            icon tech:kafka-icon
+
+            -> kafka-event-log 'Подписываются на Kafka topics с consumer group telemetry-store-writer.v1'
+            -> telemetry-store 'Записывают canonical telemetry, service events и source config snapshots по idp.telemetry-store.clickhouse.telemetry-store.v1'
+        }
+    }
+}

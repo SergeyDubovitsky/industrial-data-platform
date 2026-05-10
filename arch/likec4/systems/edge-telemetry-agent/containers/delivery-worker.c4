@@ -1,13 +1,13 @@
 model {
     extend edge-telemetry-agent {
         delivery-worker = container 'DeliveryWorker' {
-            description 'Application worker wm_edge_agent: читает Delivery Outbox, публикует telemetry events в MQTT topic tree и обновляет attempts/status доставки. Status topics остаются target contract следующей runtime-фазы.'
-            technology 'wm_edge_agent.application.delivery.DeliveryWorker / PahoMqttPublisher'
+            description 'Application worker edge_telemetry_agent: читает Delivery Outbox, публикует telemetry events в MQTT topic tree и обновляет attempts/status доставки. Status topics остаются target contract следующей runtime-фазы.'
+            technology 'edge_telemetry_agent.application.delivery.DeliveryWorker / PahoMqttPublisher'
 
             -> bootstrap-configuration 'Загружает настройки MQTT, topic contract и retry-политики'
             -> agent-runtime-config-cache 'Читает tenant_id, asset_id и source_config_revision для публикации telemetry payload'
             -> local-state-store 'Читает edge.sqlite-outbox-record.v1, обновляет attempts/status и выполняет recovery зависших inflight records'
-            -> monitoring-alarm-platform.mqtt-ingestion-gateway 'Публикует реализованный wm.telemetry.event.v1 с tenant_id claim по MQTT 5.0'
+            -> industrial-data-platform.mqtt-ingestion-gateway 'Публикует реализованный idp.edge.telemetry.event.v1 с tenant_id claim по MQTT 5.0'
         }
     }
 

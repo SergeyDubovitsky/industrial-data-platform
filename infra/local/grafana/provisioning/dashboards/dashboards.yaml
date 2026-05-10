@@ -1,10 +1,10 @@
 apiVersion: 1
 
 providers:
-  - name: wm-local-clickhouse-dashboards
+  - name: idp-local-clickhouse-dashboards
     orgId: 1
     folder: Web Monitoring
-    folderUid: wm-local
+    folderUid: idp-local
     type: file
     disableDeletion: false
     allowUiUpdates: false

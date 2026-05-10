@@ -32,16 +32,16 @@
 
 В репозитории уже есть несколько сильных заготовок под задачу:
 
-- `libs/wm_knx_parser` умеет читать `ETS .knxproj`
+- `libs/knx_project_parser` умеет читать `ETS .knxproj`
   и извлекать:
   - group addresses
   - `DatapointType`
   - устройства
   - communication assets
   - связи communication assets <-> group addresses
-- `apps/wm_knx_demo` уже использует `xknx` для подключения к `KNX/IP`,
+- `apps/knx_demo` уже использует `xknx` для подключения к `KNX/IP`,
   чтения значений и получения telegrams
-- `apps/wm_edge_agent` уже содержит:
+- `apps/edge_telemetry_agent` уже содержит:
   - protocol-agnostic модель `Observation -> TelemetryEvent`
   - конфигурацию `agent / sources / points`
   - merge source defaults + point overrides
@@ -205,7 +205,7 @@ web-monitoring data path.
 
 1. Быстрый путь для заказчика:
    сделать отдельное приложение `apps/knx_opc_bridge`, переиспользовав
-   `wm_knx_parser`, паттерны `xknx` и часть доменных моделей `wm_edge_agent`.
+   `knx_project_parser`, паттерны `xknx` и часть доменных моделей `edge_telemetry_agent`.
 2. Стратегический путь:
    после стабилизации вынести общую сердцевину в reusable runtime-core и
    поддерживать два northbound-адаптера:
@@ -364,14 +364,14 @@ addresses. Поэтому в конфиге нужно явно моделиро
 - `float`
 - `string`
 
-Это хорошо согласуется и с текущими контрактами `wm_edge_agent`, и с задачей
+Это хорошо согласуется и с текущими контрактами `edge_telemetry_agent`, и с задачей
 интеграции в `SCADA`.
 
 ## 10. Импорт ETS-проекта
 
 ### 10.1. Что уже покрыто
 
-Текущий `wm_knx_parser` уже дает достаточно данных, чтобы сделать импортёр:
+Текущий `knx_project_parser` уже дает достаточно данных, чтобы сделать импортёр:
 
 - group addresses
 - `DatapointType`
@@ -504,13 +504,13 @@ Python-кроссплатформенного ядра.
 
 - `xknx` для `KNX`
 - `asyncua` для `OPC UA server`
-- `wm_knx_parser` для импорта `ETS`
+- `knx_project_parser` для импорта `ETS`
 - `SQLite` для технического persistence
 
 ### 14.2. Архитектурное решение
 
 Рекомендуется не пытаться прямо сейчас встроить это как `transport = opcua`
-в текущий `wm_edge_agent`.
+в текущий `edge_telemetry_agent`.
 
 Правильнее:
 
@@ -663,7 +663,7 @@ Python-кроссплатформенного ядра.
 - `KNX -> OPC UA bridge` как отдельный Python-сервис
 - `asyncua` как основную библиотеку `OPC UA server`
 - `xknx` как основной runtime-коннектор к `KNX`
-- `wm_knx_parser` как основу импорта `ETS`
+- `knx_project_parser` как основу импорта `ETS`
 - `SQLite` как техническое кэш/сервисное хранилище
 
 Не включать в первую версию:

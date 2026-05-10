@@ -1,7 +1,7 @@
 views 'Field Systems / Gateways' {
     view c2-field-protocol-gateways of field-protocol-gateways {
         title 'C2 Gateways'
-        description 'Внутренняя структура протокольных шлюзов и SCADA-контроллеров. Диаграмма показывает конкретные southbound-сегменты и их передачу данных в wm_edge_agent.'
+        description 'Внутренняя структура протокольных шлюзов и SCADA-контроллеров. Диаграмма показывает конкретные southbound-сегменты и их передачу данных в edge_telemetry_agent.'
 
         include field-protocol-gateways
         include field-protocol-gateways.*

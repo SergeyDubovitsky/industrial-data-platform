@@ -484,11 +484,11 @@ class LocalStorageStack(LocalPlatformStack):
             "clickhouse",
             "clickhouse-client",
             "--user",
-            "wm",
+            "idp",
             "--password",
             "change-me-local-clickhouse",
             "--database",
-            "wm",
+            "idp",
             "--query",
             query,
             check=check,
@@ -502,7 +502,7 @@ class LocalStorageStack(LocalPlatformStack):
                 "run",
                 "--env-file",
                 str(self.env_file),
-                "wm-clickhouse",
+                "idp-telemetry-store",
                 "migrate",
                 "up",
             ],
@@ -544,7 +544,7 @@ class LocalStorageStack(LocalPlatformStack):
 
     def wait_for_kafka_connect_connector(
         self,
-        connector_name: str = "wm-clickhouse-telemetry-store-v1",
+        connector_name: str = "idp-telemetry-store-telemetry-store-v1",
         *,
         timeout: float = 120.0,
     ) -> None:
@@ -647,11 +647,11 @@ class LocalGrafanaClickHouseStack(LocalComposeStack):
             "clickhouse",
             "clickhouse-client",
             "--user",
-            "wm",
+            "idp",
             "--password",
             "change-me-local-clickhouse",
             "--database",
-            "wm",
+            "idp",
             "--query",
             query,
             check=check,
@@ -665,7 +665,7 @@ class LocalGrafanaClickHouseStack(LocalComposeStack):
                 "run",
                 "--env-file",
                 str(self.env_file),
-                "wm-clickhouse",
+                "idp-telemetry-store",
                 "migrate",
                 "up",
             ],
@@ -745,9 +745,9 @@ class LocalConfigRegistryPostgresStack(LocalComposeStack):
                 "-p",
                 "5432",
                 "-U",
-                "wm",
+                "idp",
                 "-d",
-                "wm_config_registry",
+                "idp_config_registry",
                 check=False,
                 timeout=30,
             )
@@ -771,10 +771,10 @@ class LocalConfigRegistryPostgresStack(LocalComposeStack):
                 "--env-file",
                 str(self.env_file),
                 "--package",
-                "wm-config-registry",
+                "idp-config-registry",
                 "alembic",
                 "-c",
-                "apps/wm_config_registry/alembic.ini",
+                "apps/idp_config_registry/alembic.ini",
                 "upgrade",
                 "head",
             ],
@@ -812,9 +812,9 @@ class LocalConfigDeliveryStack(LocalPlatformStack):
                 "-p",
                 "5432",
                 "-U",
-                "wm",
+                "idp",
                 "-d",
-                "wm_config_registry",
+                "idp_config_registry",
                 check=False,
                 timeout=30,
             )
@@ -838,7 +838,7 @@ class LocalConfigDeliveryStack(LocalPlatformStack):
             result = self.compose(
                 "logs",
                 "--no-color",
-                "wm-config-registry-outbox-worker",
+                "idp-config-registry-outbox-worker",
                 check=False,
                 timeout=30,
             )
@@ -878,10 +878,10 @@ class LocalConfigDeliveryStack(LocalPlatformStack):
             "run",
             "--rm",
             "--no-deps",
-            "wm-config-registry",
+            "idp-config-registry",
             "alembic",
             "-c",
-            "apps/wm_config_registry/alembic.ini",
+            "apps/idp_config_registry/alembic.ini",
             "upgrade",
             "head",
             timeout=timeout,
@@ -943,7 +943,7 @@ def local_stack(tmp_path_factory: pytest.TempPathFactory) -> LocalMqttStack:
     env_values = _read_env_file(BASE_ENV_FILE)
     mqtt_port = _reserve_free_port()
     mqtt_ws_port = _reserve_free_port()
-    mqtt_username = f"wm_test_{uuid.uuid4().hex[:8]}"
+    mqtt_username = f"idp_test_{uuid.uuid4().hex[:8]}"
     mqtt_password = secrets.token_urlsafe(18)
 
     env_values.update(
@@ -961,7 +961,7 @@ def local_stack(tmp_path_factory: pytest.TempPathFactory) -> LocalMqttStack:
     _write_env_file(env_file, env_values)
 
     stack = LocalMqttStack(
-        project_name=f"wm-it-{uuid.uuid4().hex[:10]}",
+        project_name=f"idp-it-{uuid.uuid4().hex[:10]}",
         env_file=env_file,
         mqtt_port=mqtt_port,
         mqtt_username=mqtt_username,
@@ -993,7 +993,7 @@ def local_platform_stack(tmp_path_factory: pytest.TempPathFactory) -> LocalPlatf
     redpanda_connect_port = _reserve_free_port()
     redpanda_connect_config_port = _reserve_free_port()
     redpanda_connect_source_config_port = _reserve_free_port()
-    mqtt_username = f"wm_test_{uuid.uuid4().hex[:8]}"
+    mqtt_username = f"idp_test_{uuid.uuid4().hex[:8]}"
     mqtt_password = secrets.token_urlsafe(18)
 
     env_values.update(
@@ -1018,7 +1018,7 @@ def local_platform_stack(tmp_path_factory: pytest.TempPathFactory) -> LocalPlatf
     _write_env_file(env_file, env_values)
 
     stack = LocalPlatformStack(
-        project_name=f"wm-it-{uuid.uuid4().hex[:10]}",
+        project_name=f"idp-it-{uuid.uuid4().hex[:10]}",
         env_file=env_file,
         mqtt_port=mqtt_port,
         mqtt_username=mqtt_username,
@@ -1072,7 +1072,7 @@ def local_storage_stack(tmp_path_factory: pytest.TempPathFactory) -> LocalStorag
     clickhouse_native_port = _reserve_free_port()
     kafka_connect_rest_port = _reserve_free_port()
     kafka_connect_jmx_port = _reserve_free_port()
-    mqtt_username = f"wm_test_{uuid.uuid4().hex[:8]}"
+    mqtt_username = f"idp_test_{uuid.uuid4().hex[:8]}"
     mqtt_password = secrets.token_urlsafe(18)
 
     env_values.update(
@@ -1103,7 +1103,7 @@ def local_storage_stack(tmp_path_factory: pytest.TempPathFactory) -> LocalStorag
     _write_env_file(env_file, env_values)
 
     stack = LocalStorageStack(
-        project_name=f"wm-it-{uuid.uuid4().hex[:10]}",
+        project_name=f"idp-it-{uuid.uuid4().hex[:10]}",
         env_file=env_file,
         mqtt_port=mqtt_port,
         mqtt_username=mqtt_username,
@@ -1163,7 +1163,7 @@ def local_grafana_clickhouse_stack(
     clickhouse_http_port = _reserve_free_port()
     clickhouse_native_port = _reserve_free_port()
     grafana_port = _reserve_free_port()
-    grafana_admin_user = f"wm_admin_{uuid.uuid4().hex[:8]}"
+    grafana_admin_user = f"idp_admin_{uuid.uuid4().hex[:8]}"
     grafana_admin_password = secrets.token_urlsafe(18)
 
     env_values.update(
@@ -1182,7 +1182,7 @@ def local_grafana_clickhouse_stack(
     _write_env_file(env_file, env_values)
 
     stack = LocalGrafanaClickHouseStack(
-        project_name=f"wm-it-{uuid.uuid4().hex[:10]}",
+        project_name=f"idp-it-{uuid.uuid4().hex[:10]}",
         env_file=env_file,
         clickhouse_http_port=clickhouse_http_port,
         clickhouse_native_port=clickhouse_native_port,
@@ -1216,8 +1216,8 @@ def local_config_registry_postgres_stack(
     env_values = _read_env_file(BASE_ENV_FILE)
     postgres_port = _reserve_free_port()
     database_url = (
-        "postgresql+asyncpg://wm:change-me-local-postgres"
-        f"@127.0.0.1:{postgres_port}/wm_config_registry"
+        "postgresql+asyncpg://idp:change-me-local-postgres"
+        f"@127.0.0.1:{postgres_port}/idp_config_registry"
     )
 
     env_values.update(
@@ -1228,12 +1228,12 @@ def local_config_registry_postgres_stack(
         }
     )
 
-    env_dir = tmp_path_factory.mktemp("wm-config-registry-postgres-stack")
+    env_dir = tmp_path_factory.mktemp("idp-config-registry-postgres-stack")
     env_file = env_dir / ".env.integration"
     _write_env_file(env_file, env_values)
 
     stack = LocalConfigRegistryPostgresStack(
-        project_name=f"wm-it-{uuid.uuid4().hex[:10]}",
+        project_name=f"idp-it-{uuid.uuid4().hex[:10]}",
         env_file=env_file,
         postgres_port=postgres_port,
         database_url=database_url,
@@ -1269,11 +1269,11 @@ def local_config_delivery_stack(
     redpanda_connect_source_config_port = _reserve_free_port()
     postgres_port = _reserve_free_port()
     config_registry_port = _reserve_free_port()
-    mqtt_username = f"wm_test_{uuid.uuid4().hex[:8]}"
+    mqtt_username = f"idp_test_{uuid.uuid4().hex[:8]}"
     mqtt_password = secrets.token_urlsafe(18)
     database_url = (
-        "postgresql+asyncpg://wm:change-me-local-postgres"
-        f"@127.0.0.1:{postgres_port}/wm_config_registry"
+        "postgresql+asyncpg://idp:change-me-local-postgres"
+        f"@127.0.0.1:{postgres_port}/idp_config_registry"
     )
 
     env_values.update(
@@ -1294,7 +1294,7 @@ def local_config_delivery_stack(
             "POSTGRES_PORT": str(postgres_port),
             "CONFIG_REGISTRY_PORT": str(config_registry_port),
             "CONFIG_REGISTRY_DATABASE_URL": database_url,
-            "CONFIG_REGISTRY_KAFKA_CLIENT_ID": "wm-config-registry-worker-it",
+            "CONFIG_REGISTRY_KAFKA_CLIENT_ID": "idp-config-registry-worker-it",
             "CONFIG_REGISTRY_OUTBOX_POLL_INTERVAL_SECONDS": "0.5",
         }
     )
@@ -1304,7 +1304,7 @@ def local_config_delivery_stack(
     _write_env_file(env_file, env_values)
 
     stack = LocalConfigDeliveryStack(
-        project_name=f"wm-it-{uuid.uuid4().hex[:10]}",
+        project_name=f"idp-it-{uuid.uuid4().hex[:10]}",
         env_file=env_file,
         mqtt_port=mqtt_port,
         mqtt_username=mqtt_username,
@@ -1337,8 +1337,8 @@ def local_config_delivery_stack(
             "kafka-init",
             "redpanda-connect-config-projection",
             "redpanda-connect-source-config-snapshot",
-            "wm-config-registry",
-            "wm-config-registry-outbox-worker",
+            "idp-config-registry",
+            "idp-config-registry-outbox-worker",
             timeout=900,
         )
         stack.wait_for_redpanda_connect_config_projection()

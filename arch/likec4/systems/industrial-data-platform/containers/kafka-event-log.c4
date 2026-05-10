@@ -1,0 +1,12 @@
+model {
+    extend industrial-data-platform {
+        kafka-event-log = container 'Kafka Event Log' {
+            description 'Логический Kafka-compatible event stream платформы: topics idp.kafka.topics.v1 для telemetry events, service events, source config snapshots, ingestion errors и derived events. Используется как streaming/replay слой и не заменяет долговременные хранилища.'
+            technology 'Kafka API / topics'
+            icon tech:kafka
+            style {
+                shape queue
+            }
+        }
+    }
+}

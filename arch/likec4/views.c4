@@ -1,14 +1,16 @@
 views {
     view c1-system-context of edge-telemetry-agent {
-        title 'wm_edge_agent + Monitoring & Alarm Platform - C1 System Context'
-        description 'C1-контекст двух разрабатываемых систем: wm_edge_agent на объекте и Monitoring & Alarm Platform в облаке/интернете. Текущий первый адаптер в проекте — KNX, но модель изначально проектируется мультипротокольной.'
+        title 'edge_telemetry_agent + Industrial Data Platform - C1 System Context'
+        description 'C1-контекст ядра сбора и хранения данных: edge_telemetry_agent на объекте, Industrial Data Platform в облаке/интернете и отдельные прикладные модули Web Monitoring и Alarm Management. Текущий первый адаптер в проекте — KNX, но модель изначально проектируется мультипротокольной.'
 
         include
 
             field-devices,
             field-protocol-gateways,
             edge-telemetry-agent,
-            monitoring-alarm-platform,
+            industrial-data-platform,
+            web-monitoring-module,
+            alarm-management-module,
             notification-channels,
             service-engineer,
             operator,
@@ -20,7 +22,11 @@ views {
 
 
         rank same {
-            edge-telemetry-agent, monitoring-alarm-platform
+            edge-telemetry-agent, industrial-data-platform
+        }
+
+        rank same {
+            web-monitoring-module, alarm-management-module
         }
 
         rank sink {

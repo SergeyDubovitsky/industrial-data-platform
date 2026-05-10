@@ -1,0 +1,131 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://industrial-data-platform.local/contracts/kafka/idp.source.config.v1.schema.json",
+    "title": "idp.source.config.v1",
+    "description": "Canonical source config snapshot from server-issued source config.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+        "message_type",
+        "tenant_id",
+        "asset_id",
+        "agent_id",
+        "source_id",
+        "source_type",
+        "source_config_revision",
+        "ts",
+        "ingested_at",
+        "points"
+    ],
+    "properties": {
+        "message_type": {
+            "const": "idp.source.config.v1"
+        },
+        "tenant_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "asset_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "agent_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_id": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_type": {
+            "type": "string",
+            "minLength": 1
+        },
+        "source_config_revision": {
+            "type": "string",
+            "minLength": 1
+        },
+        "ts": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "ingested_at": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "points": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "point_id",
+                    "point_key",
+                    "point_ref",
+                    "name",
+                    "signal_type",
+                    "value_type",
+                    "value_model"
+                ],
+                "properties": {
+                    "point_id": {
+                        "type": "string",
+                        "description": "Stable Platform Registry id when available. MVP fallback: {tenant_id}|{asset_id}|{source_id}|{point_key}.",
+                        "minLength": 1
+                    },
+                    "point_key": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "point_ref": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "signal_type": {
+                        "type": "string",
+                        "enum": [
+                            "command",
+                            "feedback",
+                            "status",
+                            "sensor"
+                        ]
+                    },
+                    "value_type": {
+                        "type": "string",
+                        "enum": [
+                            "boolean",
+                            "number",
+                            "string"
+                        ]
+                    },
+                    "value_model": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "unit": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "tags": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

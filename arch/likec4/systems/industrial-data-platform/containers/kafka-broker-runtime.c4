@@ -1,0 +1,11 @@
+model {
+    extend industrial-data-platform {
+        kafka-broker-runtime = container 'Kafka-Compatible Broker Runtime' {
+            description 'Конкретная broker implementation за логическим Kafka Event Log. Локальный MVP использует Apache Kafka 4.2 в KRaft mode; Redpanda broker остается production/self-hosted candidate после compatibility PoC.'
+            technology 'Apache Kafka broker / Kafka API; Redpanda broker candidate'
+            icon tech:kafka
+
+            -> kafka-event-log 'Хранит и обслуживает Kafka topics'
+        }
+    }
+}

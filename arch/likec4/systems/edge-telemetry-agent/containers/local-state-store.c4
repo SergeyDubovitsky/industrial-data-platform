@@ -1,8 +1,8 @@
 model {
     extend edge-telemetry-agent {
         local-state-store = container 'SQLiteOutbox + SQLitePointStateCache' {
-            description 'Локальное техническое SQLite-хранилище wm_edge_agent: Point State Cache для warm restart и фильтрации изменений, Delivery Outbox для надежной доставки, attempts/status и recovery. Контракты: edge.sqlite-point-state-cache.v1, edge.sqlite-outbox-record.v1.'
-            technology 'wm_edge_agent.infrastructure.sqlite_outbox.SQLiteOutbox / wm_edge_agent.infrastructure.sqlite_point_state.SQLitePointStateCache'
+            description 'Локальное техническое SQLite-хранилище edge_telemetry_agent: Point State Cache для warm restart и фильтрации изменений, Delivery Outbox для надежной доставки, attempts/status и recovery. Контракты: edge.sqlite-point-state-cache.v1, edge.sqlite-outbox-record.v1.'
+            technology 'edge_telemetry_agent.infrastructure.sqlite_outbox.SQLiteOutbox / edge_telemetry_agent.infrastructure.sqlite_point_state.SQLitePointStateCache'
             style {
                 shape storage
             }

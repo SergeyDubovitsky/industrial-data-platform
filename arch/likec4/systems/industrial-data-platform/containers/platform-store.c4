@@ -1,0 +1,12 @@
+model {
+    extend industrial-data-platform {
+        platform-store = container 'Platform Store' {
+            description 'Transactional PostgreSQL store ядра данных: persistence для idp_config_registry, конфигурация объектов, агентов, источников и точек, shared module state, audit и persistence Keycloak.'
+            technology 'PostgreSQL / transactional platform store'
+            icon tech:postgresql
+            style {
+                shape storage
+            }
+        }
+    }
+}

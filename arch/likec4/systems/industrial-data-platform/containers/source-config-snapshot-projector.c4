@@ -1,0 +1,11 @@
+model {
+    extend industrial-data-platform {
+        source-config-snapshot-projector = container 'Source Config Snapshot Projector' {
+            description 'Consumer, который читает idp.edge.configs.v1 delivery records, выбирает source config payloads и публикует canonical idp.source.config.v1 records в idp.source.configs.v1 для enrichment cache, аналитики и ClickHouse snapshots.'
+            technology 'Kafka consumer / Kafka producer'
+            icon bootstrap:shuffle
+
+            -> kafka-event-log 'Читает idp.edge.configs.v1 и пишет idp.source.configs.v1 по idp.kafka.topics.v1'
+        }
+    }
+}

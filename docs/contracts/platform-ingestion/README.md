@@ -1,6 +1,6 @@
 # Platform Ingestion Contracts
 
-Дата: 2026-05-02
+Дата: 2026-05-10
 Статус: working draft
 
 Раздел фиксирует контракты преобразования:
@@ -11,8 +11,11 @@ MQTT topic + MQTT payload + retained source config
   -> downstream consumers
 ```
 
+Эти контракты принадлежат `Industrial Data Platform`. `idp.*` message types и
+topics являются стабильным wire surface после pre-production reset.
+
 ## Контракты
 
 | Contract-id | Файл | Назначение |
 | --- | --- | --- |
-| `wm.platform-ingestion.mqtt-to-kafka.v1` | `mqtt-to-kafka.v1.md` | Mapping MQTT edge boundary в canonical Kafka records |
+| `idp.ingestion.mqtt-to-kafka.v1` | `mqtt-to-kafka.v1.md` | Mapping MQTT edge boundary в canonical Kafka records |

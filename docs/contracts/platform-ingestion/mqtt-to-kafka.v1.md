@@ -1,29 +1,31 @@
-# `wm.platform-ingestion.mqtt-to-kafka.v1`
+# `idp.ingestion.mqtt-to-kafka.v1`
 
-Дата: 2026-05-02
+Дата: 2026-05-10
 Статус: working draft
 
 Этот контракт фиксирует преобразование MQTT edge boundary в canonical Kafka
-records `Monitoring & Alarm Platform`.
+records для `Industrial Data Platform`.
+
+Kafka topics и message types используют `idp.*` как стабильный wire contract.
 
 ## Input
 
 Ingestion pipeline принимает:
 
-- MQTT topic path из `wm.mqtt.topic-tree.v1`
-- MQTT payload contracts `wm.telemetry.event.v1`, `wm.source.connection.v1`,
-  `wm.agent.lwt.v1`
+- MQTT topic path из `idp.edge.mqtt.topic-tree.v1`
+- MQTT payload contracts `idp.edge.telemetry.event.v1`, `idp.edge.source.connection.v1`,
+  `idp.edge.agent.lwt.v1`
 - config registry/cache для проверки `tenant_id`, `source_config_revision` и
-  `point_id`; registry/cache строится из `wm.platform.source.configs.v1` и/или
-  `Platform Store`, а не из retained MQTT config topics
+  `point_id`; authoritative registry/cache строится из `idp.source.configs.v1`
+  и/или `Platform Store`
 
-`tenant_id` публикуется wm-edge-agent-ом в MQTT payload как claim из retained
+`tenant_id` публикуется edge-telemetry-agent-ом в MQTT payload как claim из retained
 agent runtime config. Ingestion не берет tenant из topic path и обязан валидировать
 claim через MQTT auth/ACL и config registry/cache.
 
-`wm.edge.agent-runtime-config.v1` и `wm.edge.config.status.v1` не входят в Kafka
+`idp.edge.agent-runtime-config.v1` и `idp.edge.config.status.v1` не входят в Kafka
 surface этого контракта `v1`. Они остаются retained MQTT contracts для
-bootstrap/operational lifecycle wm-edge-agent и должны быть исключены фильтром
+bootstrap/operational lifecycle edge-telemetry-agent и должны быть исключены фильтром
 подписки или routing rules до стадии Kafka mapping, а не считаться ingestion
 error.
 
@@ -41,15 +43,15 @@ error.
 
 Все path identifiers должны соответствовать edge MQTT contract. Topic, который
 не матчится на известный template, отправляется в
-`wm.platform.ingestion.errors.v1`.
+`idp.ingestion.errors.v1`.
 
 ## Enrichment
 
 Tenant validation:
 
-- input field: `tenant_id` из `wm.telemetry.event.v1`
+- input field: `tenant_id` из `idp.edge.telemetry.event.v1`
 - validation key: `tenant_id + asset_id + agent_id + source_id`
-- validation source: config registry/cache, сформированный из `wm.platform.source.configs.v1` и/или `Platform Store`
+- validation source: config registry/cache, сформированный из `idp.source.configs.v1` и/или `Platform Store`
 - output field: `tenant_id` сохраняется без изменения
 
 Point enrichment для telemetry events:
@@ -64,23 +66,28 @@ Point enrichment для telemetry events:
 
 Source config enrichment:
 
-- `wm.platform.source.configs.v1` обновляет config registry/cache candidate state
+- `idp.source.configs.v1` обновляет config registry/cache candidate state
 - `source_config_revision` используется как версия source config
 - telemetry event с неизвестным `source_config_revision` не пишется в telemetry topic
   и уходит в ingestion error topic
 
-Retained `wm.edge.agent-runtime-config.v1` / `wm.edge.source-config.v1` topics являются
-delivery projection для wm-edge-agent и не являются authoritative MQTT ingress для
-`wm.platform.source.configs.v1`.
+Retained `idp.edge.agent-runtime-config.v1` / `idp.edge.source-config.v1` topics являются
+delivery projection для edge-telemetry-agent и не являются authoritative MQTT ingress для
+`idp.source.configs.v1`.
+
+Local `Redpanda Connect` может использовать retained `idp.edge.source-config.v1`
+как неавторитетный warmup для ephemeral enrichment cache, но не должен
+публиковать из него `idp.source.configs.v1`; canonical source snapshots строит
+только `Source Config Snapshot Projector` из `idp.edge.configs.v1`.
 
 ## Output records
 
 | Input | Kafka topic | Kafka value schema |
 | --- | --- | --- |
-| `wm.telemetry.event.v1` | `wm.platform.telemetry.events.v1` | `wm.platform.telemetry.event.v1` |
-| `wm.source.connection.v1` | `wm.platform.source.connections.v1` | `wm.platform.source.connection.v1` |
-| `wm.agent.lwt.v1` | `wm.platform.agent.status.v1` | `wm.platform.agent.status.v1` |
-| invalid / unresolved input | `wm.platform.ingestion.errors.v1` | `wm.platform.ingestion.error.v1` |
+| `idp.edge.telemetry.event.v1` | `idp.telemetry.events.v1` | `idp.telemetry.event.v1` |
+| `idp.edge.source.connection.v1` | `idp.source.connections.v1` | `idp.source.connection.v1` |
+| `idp.edge.agent.lwt.v1` | `idp.agent.status.v1` | `idp.agent.status.v1` |
+| invalid / unresolved input | `idp.ingestion.errors.v1` | `idp.ingestion.error.v1` |
 
 Telemetry idempotency key:
 
@@ -100,9 +107,9 @@ Telemetry Kafka key:
 ## Error handling
 
 Запись не попадает в normal Kafka topic и отправляется в
-`wm.platform.ingestion.errors.v1`, если:
+`idp.ingestion.errors.v1`, если:
 
-- MQTT topic не соответствует `wm.mqtt.topic-tree.v1`
+- MQTT topic не соответствует `idp.edge.mqtt.topic-tree.v1`
 - payload не соответствует заявленной schema
 - `tenant_id` claim не совпадает с MQTT auth/ACL или config registry/cache
 - point lookup отсутствует или неоднозначен для telemetry event

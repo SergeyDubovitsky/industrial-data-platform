@@ -1,4 +1,4 @@
-name: web-monitoring-local
+name: industrial-data-platform-local
 
 services:
   mqtt-broker:
@@ -81,24 +81,24 @@ services:
             --replication-factor 1 \
             "$$@"
         }
-        create_topic wm.platform.telemetry.events.v1 --config retention.ms=604800000
-        create_topic wm.platform.edge.configs.v1 --config cleanup.policy=compact
-        create_topic wm.platform.source.configs.v1 --config cleanup.policy=compact
-        create_topic wm.platform.source.connections.v1 --config cleanup.policy=compact
-        create_topic wm.platform.agent.status.v1 --config cleanup.policy=compact
-        create_topic wm.platform.ingestion.errors.v1 --config retention.ms=2592000000
-        create_topic wm.platform.derived.events.v1 --config retention.ms=604800000
-        create_topic wm.platform.telemetry-store.dlq.v1 --config retention.ms=2592000000
-        create_topic ${KAFKA_CONNECT_CONFIG_TOPIC:-wm.local.kafka-connect.configs} --config cleanup.policy=compact
-        create_topic ${KAFKA_CONNECT_OFFSET_TOPIC:-wm.local.kafka-connect.offsets} --config cleanup.policy=compact
-        create_topic ${KAFKA_CONNECT_STATUS_TOPIC:-wm.local.kafka-connect.status} --config cleanup.policy=compact
+        create_topic idp.telemetry.events.v1 --config retention.ms=604800000
+        create_topic idp.edge.configs.v1 --config cleanup.policy=compact
+        create_topic idp.source.configs.v1 --config cleanup.policy=compact
+        create_topic idp.source.connections.v1 --config cleanup.policy=compact
+        create_topic idp.agent.status.v1 --config cleanup.policy=compact
+        create_topic idp.ingestion.errors.v1 --config retention.ms=2592000000
+        create_topic idp.derived.events.v1 --config retention.ms=604800000
+        create_topic idp.telemetry-store.dlq.v1 --config retention.ms=2592000000
+        create_topic ${KAFKA_CONNECT_CONFIG_TOPIC:-idp.local.kafka-connect.configs} --config cleanup.policy=compact
+        create_topic ${KAFKA_CONNECT_OFFSET_TOPIC:-idp.local.kafka-connect.offsets} --config cleanup.policy=compact
+        create_topic ${KAFKA_CONNECT_STATUS_TOPIC:-idp.local.kafka-connect.status} --config cleanup.policy=compact
 
   clickhouse:
     image: ${CLICKHOUSE_IMAGE:-clickhouse/clickhouse-server:25.4}
     restart: unless-stopped
     environment:
-      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-wm}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-wm}
+      CLICKHOUSE_DB: ${CLICKHOUSE_DATABASE:-idp}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-idp}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-change-me-local-clickhouse}
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
     ports:
@@ -122,8 +122,8 @@ services:
     image: ${POSTGRES_IMAGE:-postgres:17}
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-wm_config_registry}
-      POSTGRES_USER: ${POSTGRES_USER:-wm}
+      POSTGRES_DB: ${POSTGRES_DB:-idp_config_registry}
+      POSTGRES_USER: ${POSTGRES_USER:-idp}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-postgres}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
@@ -140,40 +140,40 @@ services:
       retries: 10
       start_period: 20s
 
-  wm-config-registry:
+  idp-config-registry:
     build:
       context: ../..
-      dockerfile: infra/local/wm-config-registry/Dockerfile
-    image: ${CONFIG_REGISTRY_IMAGE:-web-monitoring/wm-config-registry:local}
+      dockerfile: infra/local/idp-config-registry/Dockerfile
+    image: ${CONFIG_REGISTRY_IMAGE:-industrial-data-platform/idp-config-registry:local}
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
-    command: ["wm-config-registry", "serve"]
+    command: ["idp-config-registry", "serve"]
     ports:
       - "${CONFIG_REGISTRY_PORT:-8000}:8000"
     environment:
       CONFIG_REGISTRY_HOST: 0.0.0.0
       CONFIG_REGISTRY_PORT: 8000
       CONFIG_REGISTRY_INTERNAL_MODE: ${CONFIG_REGISTRY_INTERNAL_MODE:-true}
-      CONFIG_REGISTRY_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wm}:${POSTGRES_PASSWORD:-change-me-local-postgres}@postgres:5432/${POSTGRES_DB:-wm_config_registry}
+      CONFIG_REGISTRY_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-idp}:${POSTGRES_PASSWORD:-change-me-local-postgres}@postgres:5432/${POSTGRES_DB:-idp_config_registry}
 
-  wm-config-registry-outbox-worker:
+  idp-config-registry-outbox-worker:
     build:
       context: ../..
-      dockerfile: infra/local/wm-config-registry/Dockerfile
-    image: ${CONFIG_REGISTRY_IMAGE:-web-monitoring/wm-config-registry:local}
+      dockerfile: infra/local/idp-config-registry/Dockerfile
+    image: ${CONFIG_REGISTRY_IMAGE:-industrial-data-platform/idp-config-registry:local}
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
       kafka-init:
         condition: service_completed_successfully
-    command: ["wm-config-registry", "publish-config-outbox-worker"]
+    command: ["idp-config-registry", "publish-config-outbox-worker"]
     environment:
-      CONFIG_REGISTRY_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-wm}:${POSTGRES_PASSWORD:-change-me-local-postgres}@postgres:5432/${POSTGRES_DB:-wm_config_registry}
+      CONFIG_REGISTRY_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-idp}:${POSTGRES_PASSWORD:-change-me-local-postgres}@postgres:5432/${POSTGRES_DB:-idp_config_registry}
       KAFKA_BOOTSTRAP_SERVERS: kafka:19092
-      CONFIG_REGISTRY_KAFKA_CLIENT_ID: ${CONFIG_REGISTRY_KAFKA_CLIENT_ID:-wm-config-registry-outbox-worker}
+      CONFIG_REGISTRY_KAFKA_CLIENT_ID: ${CONFIG_REGISTRY_KAFKA_CLIENT_ID:-idp-config-registry-outbox-worker}
       CONFIG_REGISTRY_OUTBOX_BATCH_LIMIT: ${CONFIG_REGISTRY_OUTBOX_BATCH_LIMIT:-100}
       CONFIG_REGISTRY_OUTBOX_LEASE_SECONDS: ${CONFIG_REGISTRY_OUTBOX_LEASE_SECONDS:-30}
       CONFIG_REGISTRY_OUTBOX_RETRY_DELAY_SECONDS: ${CONFIG_REGISTRY_OUTBOX_RETRY_DELAY_SECONDS:-30}
@@ -186,7 +186,7 @@ services:
       args:
         GRAFANA_BASE_IMAGE: ${GRAFANA_BASE_IMAGE:-grafana/grafana:12.2.0}
         GRAFANA_CLICKHOUSE_DATASOURCE_VERSION: ${GRAFANA_CLICKHOUSE_DATASOURCE_VERSION:-4.15.0}
-    image: ${GRAFANA_IMAGE:-web-monitoring/grafana-clickhouse:local}
+    image: ${GRAFANA_IMAGE:-industrial-data-platform/grafana-clickhouse:local}
     restart: unless-stopped
     depends_on:
       clickhouse:
@@ -199,8 +199,8 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_PATHS_PLUGINS: /var/lib/grafana-plugins
-      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-wm}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-wm}
+      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-idp}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-idp}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-change-me-local-clickhouse}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -213,7 +213,7 @@ services:
       args:
         KAFKA_CONNECT_BASE_IMAGE: ${KAFKA_CONNECT_BASE_IMAGE:-confluentinc/cp-kafka-connect:7.7.1}
         CLICKHOUSE_KAFKA_CONNECT_VERSION: ${CLICKHOUSE_KAFKA_CONNECT_VERSION:-latest}
-    image: ${KAFKA_CONNECT_IMAGE:-web-monitoring/kafka-connect-clickhouse:local}
+    image: ${KAFKA_CONNECT_IMAGE:-industrial-data-platform/kafka-connect-clickhouse:local}
     restart: unless-stopped
     depends_on:
       kafka-init:
@@ -227,10 +227,10 @@ services:
       CONNECT_BOOTSTRAP_SERVERS: kafka:19092
       CONNECT_REST_ADVERTISED_HOST_NAME: kafka-connect
       CONNECT_REST_PORT: 8083
-      CONNECT_GROUP_ID: ${KAFKA_CONNECT_GROUP_ID:-wm-local-clickhouse-connect}
-      CONNECT_CONFIG_STORAGE_TOPIC: ${KAFKA_CONNECT_CONFIG_TOPIC:-wm.local.kafka-connect.configs}
-      CONNECT_OFFSET_STORAGE_TOPIC: ${KAFKA_CONNECT_OFFSET_TOPIC:-wm.local.kafka-connect.offsets}
-      CONNECT_STATUS_STORAGE_TOPIC: ${KAFKA_CONNECT_STATUS_TOPIC:-wm.local.kafka-connect.status}
+      CONNECT_GROUP_ID: ${KAFKA_CONNECT_GROUP_ID:-idp-local-clickhouse-connect}
+      CONNECT_CONFIG_STORAGE_TOPIC: ${KAFKA_CONNECT_CONFIG_TOPIC:-idp.local.kafka-connect.configs}
+      CONNECT_OFFSET_STORAGE_TOPIC: ${KAFKA_CONNECT_OFFSET_TOPIC:-idp.local.kafka-connect.offsets}
+      CONNECT_STATUS_STORAGE_TOPIC: ${KAFKA_CONNECT_STATUS_TOPIC:-idp.local.kafka-connect.status}
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1

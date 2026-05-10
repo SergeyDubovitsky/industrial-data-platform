@@ -1,15 +1,15 @@
-views 'Developed Systems / wm_edge_agent' {
+views 'Developed Systems / edge_telemetry_agent' {
     view c2-edge-telemetry-agent-containers of edge-telemetry-agent {
         title 'C2 Containers'
-        description 'Контейнерная декомпозиция `wm_edge_agent`. Каждый контейнер описан в отдельном файле внутри systems/edge-telemetry-agent/containers.'
+        description 'Контейнерная декомпозиция `edge_telemetry_agent`. Каждый контейнер описан в отдельном файле внутри systems/edge-telemetry-agent/containers.'
 
         include *
         include service-engineer
         include field-protocol-gateways
         include field-protocol-gateways.*
-        include monitoring-alarm-platform
-        exclude service-engineer -> monitoring-alarm-platform
-        exclude service-engineer -> monitoring-alarm-platform.*
+        include industrial-data-platform
+        exclude service-engineer -> industrial-data-platform
+        exclude service-engineer -> industrial-data-platform.*
 
         style edge-telemetry-agent {
             color primary
@@ -20,7 +20,7 @@ views 'Developed Systems / wm_edge_agent' {
         }
 
         rank sink {
-            monitoring-alarm-platform
+            industrial-data-platform
         }
     }
 }

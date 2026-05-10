@@ -1,7 +1,7 @@
 views 'Deployments / Demo Stand' {
     deployment view deployment-demo-stand-topology {
         title 'Deployment - Demo Stand Topology'
-        description 'Полная deployment topology demo-стенда по ETS-проекту "Выстовка": локальная сеть, удаленный хост с whitelist, KNX/IP, TP-линия 1.1, локальный Docker Compose stack и production-контур Monitoring & Alarm Platform с MQTT ingress и Grafana.'
+        description 'Полная deployment topology demo-стенда по ETS-проекту "Выстовка": локальная сеть, удаленный хост с whitelist, KNX/IP, TP-линия 1.1, локальный Docker Compose stack, production-контур Industrial Data Platform и отдельные Web Monitoring / Alarm Management modules.'
 
         include demo-stand.**
         include whitelisted-remote-host.**
@@ -14,7 +14,7 @@ views 'Deployments / Demo Stand' {
 
     deployment view deployment-demo-stand-current-implementation {
         title 'Deployment - Demo Stand Current Implementation'
-        description 'Текущая реализация demo-стенда: `wm_edge_agent` работает на Developer Workstation, публикует telemetry events в локальный MQTT broker, Redpanda Connect перекладывает их в локальный Apache Kafka, Kafka Connect Sink пишет в ClickHouse, а Grafana читает ClickHouse read models.'
+        description 'Текущая реализация demo-стенда: `edge_telemetry_agent` работает на Developer Workstation, публикует telemetry events в локальный MQTT broker, Redpanda Connect перекладывает их в локальный Apache Kafka, Kafka Connect Sink пишет в ClickHouse, а Grafana читает ClickHouse read models.'
 
         include demo-stand.**
         include whitelisted-remote-host.**
@@ -26,7 +26,7 @@ views 'Deployments / Demo Stand' {
 
     view demo-stand-current-monitored-points {
         title 'Demo Stand - Current Monitored Points'
-        description 'Текущий мониторинговый срез demo-стенда, собранный на базе существующих field-device элементов и KNX telemetry points, которые сейчас читает `wm_edge_agent`.'
+        description 'Текущий мониторинговый срез demo-стенда, собранный на базе существующих field-device элементов и KNX telemetry points, которые сейчас читает `edge_telemetry_agent`.'
 
         include field-devices.field-equipment
         include field-devices.field-equipment.light-switch-feedback

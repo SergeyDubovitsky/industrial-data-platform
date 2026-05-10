@@ -3,7 +3,7 @@ prune: true
 
 datasources:
   - name: WM ClickHouse Telemetry Store
-    uid: wm-clickhouse-telemetry-store
+    uid: idp-telemetry-store-telemetry-store
     type: grafana-clickhouse-datasource
     access: proxy
     orgId: 1

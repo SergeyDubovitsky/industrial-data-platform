@@ -1,17 +1,30 @@
 model {
 
 
-    edge-telemetry-agent = developed-system 'wm_edge_agent' {
+    edge-telemetry-agent = developed-system 'edge_telemetry_agent' {
         description 'Универсальная edge-система, разворачиваемая на объекте рядом с полевыми протоколами и отвечающая за сбор данных, нормализацию, фильтрацию, буферизацию и доставку событий.'
-        technology 'apps/wm_edge_agent / Edge collector / normalization / buffering / delivery'
+        technology 'apps/edge_telemetry_agent / Edge collector / normalization / buffering / delivery'
 
-        -> monitoring-alarm-platform 'Получает retained agent runtime/source configs и публикует реализованные telemetry events через MQTT; status topics остаются target contract'
+        -> industrial-data-platform 'Получает retained agent runtime/source configs и публикует реализованные telemetry events через MQTT; status topics остаются target contract'
     }
 
-    monitoring-alarm-platform = developed-system 'Monitoring & Alarm Platform' {
-        description 'Центральная система в облаке/интернете для приема событий, хранения телеметрии, визуализации, alarm-логики и маршрутизации уведомлений.'
-        technology 'Cloud monitoring platform / alarm engine / operator UI'
+    industrial-data-platform = developed-system 'Industrial Data Platform' {
+        description 'Центральное ядро сбора, доставки, конфигурации и хранения промышленных данных. Принимает edge telemetry/status streams, ведет Kafka-compatible event log, хранит history/read models и выдает данные прикладным модулям.'
+        technology 'Data collection / ingestion / Kafka-compatible event log / ClickHouse / PostgreSQL'
+    }
+
+    web-monitoring-module = developed-system 'Web Monitoring Module' {
+        description 'Отдельный прикладной модуль для dashboards, истории, операторских экранов и read-only визуализации поверх Industrial Data Platform.'
+        technology 'Grafana / browser UI / telemetry read surface'
+
+        -> industrial-data-platform 'Читает telemetry history, latest values, read models, registry/config metadata и identity context'
+    }
+
+    alarm-management-module = developed-system 'Alarm Management Module' {
+        description 'Отдельный прикладной модуль для правил alarm, жизненного цикла тревог, operator workflow и уведомлений поверх Industrial Data Platform.'
+        technology 'Rule engine / alarm workflow / notification routing'
 
         -> notification-channels 'Маршрутизирует уведомления и эскалации'
+        -> industrial-data-platform 'Читает telemetry/status/derived streams и пишет alarm history/current workflow state'
     }
 }

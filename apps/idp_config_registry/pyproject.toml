@@ -1,0 +1,39 @@
+[project]
+name = "idp-config-registry"
+version = "0.1.0"
+description = "Industrial Data Platform configuration registry service"
+readme = "README.md"
+authors = [
+    { name = "srgi0", email = "dss181@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.4",
+    "asyncpg>=0.31.0",
+    "confluent-kafka>=2.14.0",
+    "fastapi>=0.136.1",
+    "greenlet>=3.5.0",
+    "jsonschema>=4.26.0",
+    "pydantic>=2.12.5",
+    "sqladmin>=0.21.0",
+    "sqlalchemy>=2.0.49",
+    "uvicorn>=0.46.0",
+]
+
+[project.scripts]
+idp-config-registry = "idp_config_registry.__main__:main"
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["uv_build>=0.11.2,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+]

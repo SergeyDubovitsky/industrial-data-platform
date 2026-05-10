@@ -1,0 +1,11 @@
+model {
+    extend industrial-data-platform {
+        keycloak = container 'Keycloak' {
+            description 'Shared identity and access management: realms, пользователи, роли, клиенты и выпуск токенов для модулей поверх Industrial Data Platform.'
+            technology 'Keycloak / OIDC / OAuth 2.0'
+            icon tech:oauth
+
+            -> platform-store 'Хранит realm, client и user persistence в PostgreSQL'
+        }
+    }
+}

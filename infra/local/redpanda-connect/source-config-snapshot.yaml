@@ -7,22 +7,22 @@ input:
     seed_brokers:
       - kafka:19092
     topics:
-      - wm.platform.edge.configs.v1
+      - idp.edge.configs.v1
     consumer_group: source-config-snapshot-projector.v1
-    client_id: wm-local-source-config-snapshot-projector
+    client_id: idp-local-source-config-snapshot-projector
     start_offset: earliest
 
 pipeline:
   threads: 1
   processors:
     - mapping: |
-        let should_project = this.message_type == "wm.platform.edge.config.delivery.v1" && this.payload_message_type == "wm.edge.source-config.v1" && this.operation == "upsert"
+        let should_project = this.message_type == "idp.edge.config.delivery.v1" && this.payload_message_type == "idp.edge.source-config.v1" && this.operation == "upsert"
         let payload = if !$should_project || this.payload != null { this.payload } else { throw("payload_missing") }
         let ingested_at = now()
 
         root = if $should_project {
           {
-            "message_type": "wm.platform.source.config.v1",
+            "message_type": "idp.source.config.v1",
             "tenant_id": this.tenant_id,
             "asset_id": this.asset_id,
             "agent_id": this.agent_id,
@@ -53,7 +53,7 @@ output:
   redpanda:
     seed_brokers:
       - kafka:19092
-    topic: wm.platform.source.configs.v1
+    topic: idp.source.configs.v1
     key: '${! meta("kafka_key") }'
 
 logger:

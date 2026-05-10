@@ -68,7 +68,8 @@
 - production data path проектируется как `read-only`
 - целевой production-сценарий предполагает запуск `Edge Telemetry Agent` в локальной сети объекта рядом с `KNX/IP` роутером
 - текущий сценарий разработки для demo-стенда использует удаленный запуск на whitelisted workstation с доступом через `${KNX_EXTERNAL_GATEWAY_IP}:${KNX_EXTERNAL_GATEWAY_PORT}`
-- целевой transport для MVP зафиксирован как `MQTT 5.0` в `ADR-005`
+- целевой transport для MVP — `MQTT 5.0`; contract-level детали находятся в
+  `docs/contracts/edge-telemetry-agent/mqtt-topic-tree.v1.md`
 - текущие CLI в репозитории используются как диагностические инструменты и как практическая проверка адресов/режимов подключения
 
 ## Что использовать в коде

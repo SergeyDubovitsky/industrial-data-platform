@@ -79,7 +79,7 @@ high for MVP correctness; medium for production performance
 Run:
 
 ```bash
-uv run --env-file .env wm-clickhouse load-poc telemetry-read-models \
+uv run --env-file .env idp-telemetry-store load-poc telemetry-read-models \
   --rows 50000 \
   --points 100 \
   --batch-size 10000 \
