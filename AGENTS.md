@@ -69,6 +69,17 @@ old product boundary name.
 - For external libraries or service APIs, verify current docs before changing
   version-sensitive code.
 
+## Skill Routing
+
+- For issue-driven implementation or preparation from issue links or numbers,
+  including Russian prompts like "реализуй issue", "сделай реализацию issue",
+  "возьми задачу", or "возьми тикет", use the repo `issue-workflow` skill
+  before generic `git` or `github` workflows.
+- For general GitHub repository, issue, or PR triage, use `github:github`.
+- For PR review comments or requested changes, use `github:gh-address-comments`.
+- For failing GitHub Actions or CI debugging, use `github:gh-fix-ci`.
+- For committing, pushing, and opening a PR, use `github:yeet`.
+
 ## Repository Map
 
 - `apps/edge_telemetry_agent/`: Edge Telemetry Agent runtime.

@@ -1,12 +1,27 @@
 ---
-name: github-issue-workflow
-description: Use when implementing or preparing work from a GitHub issue in this repository: read and review the issue, define ready/done gates, ask clarifying questions, update the agreed scope, create a safe issue branch from the latest mainline, check current external library docs with context7 when needed, implement with TDD, run validation, fix failures, document the result, and prepare issue or PR status.
+name: issue-workflow
+description: >
+  MUST USE for issue-driven implementation or preparation in this repository
+  before generic Git or GitHub skills. Trigger when the user asks to implement,
+  work on, fix, or prepare an issue from an issue URL, issue link, or issue
+  number, including GitHub issue URLs, "implement issue", "work on issue #123",
+  "реализуй issue", "сделай реализацию issue", "возьми задачу", "возьми тикет",
+  or similar. Read the issue, define ready/done gates, branch safely, implement
+  with TDD, validate, document, and prepare issue or PR status. Do not use for
+  general GitHub triage, PR review comments, CI debugging, or publish-only work;
+  route those to github, gh-address-comments, gh-fix-ci, or yeet.
 ---
 
-# GitHub Issue Workflow
+# Issue Workflow
 
-Use this skill when a user asks to work from a GitHub issue, issue URL, issue
-number, or issue-driven task.
+Use this skill when a user asks to work from an issue link, GitHub issue URL,
+issue number, or issue-driven task.
+
+Prefer this repo-scoped workflow over generic Git/GitHub workflows for issue
+implementation requests, including Russian prompts such as "реализуй issue",
+"сделай реализацию issue", "возьми задачу", and "возьми тикет". Use the
+GitHub plugin specialist skills instead for general GitHub triage, PR review
+comments, CI debugging, and publishing.
 
 ## Read First
 

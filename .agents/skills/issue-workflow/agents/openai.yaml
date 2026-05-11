@@ -1,0 +1,7 @@
+interface:
+  display_name: "Issue Workflow"
+  short_description: "Implement linked issues safely"
+  default_prompt: "Use $issue-workflow to implement an issue from a link in this repository."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Industrial Data Contracts"
+  short_description: "Protect data contract compatibility"
+  default_prompt: "Use $industrial-data-contracts to review an Industrial Data Platform contract change."
+
+policy:
+  allow_implicit_invocation: true

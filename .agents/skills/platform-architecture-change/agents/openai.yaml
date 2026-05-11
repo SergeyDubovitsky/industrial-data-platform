@@ -1,0 +1,7 @@
+interface:
+  display_name: "Platform Architecture Change"
+  short_description: "Guide durable architecture changes"
+  default_prompt: "Use $platform-architecture-change to plan a durable architecture change."
+
+policy:
+  allow_implicit_invocation: true
