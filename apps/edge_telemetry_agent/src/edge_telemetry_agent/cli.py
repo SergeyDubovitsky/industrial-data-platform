@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any, Sequence
 from edge_telemetry_agent.application.configuration import load_agent_runtime_config
 from edge_telemetry_agent.application.delivery import DeliveryWorker
 from edge_telemetry_agent.application.processing import ObservationProcessor
+from edge_telemetry_agent.application.runtime import EdgeRuntime
 from edge_telemetry_agent.domain.config import (
     AgentRuntimeConfig,
     ConfigurationError,
@@ -18,6 +20,9 @@ from edge_telemetry_agent.domain.events import Observation, ScalarValue
 from edge_telemetry_agent.infrastructure.mqtt_publisher import connect_mqtt_publisher
 from edge_telemetry_agent.infrastructure.sqlite_outbox import SQLiteOutbox
 from edge_telemetry_agent.infrastructure.sqlite_point_state import SQLitePointStateCache
+from edge_telemetry_agent.infrastructure.synthetic_knx import (
+    SyntheticKnxObservationClient,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -98,6 +103,31 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Lease duration for reserved outbox records",
     )
     deliver_once.set_defaults(handler=_handle_deliver_once)
+
+    run = subparsers.add_parser(
+        "run",
+        help="Run southbound source adapters, process observations, and deliver telemetry",
+    )
+    _add_bootstrap_config_argument(run)
+    run.add_argument(
+        "--duration-seconds",
+        type=float,
+        default=None,
+        help="Stop automatically after this duration; omit for long-running mode.",
+    )
+    run.add_argument(
+        "--limit",
+        type=int,
+        default=100,
+        help="Maximum pending outbox records to reserve after each observation.",
+    )
+    run.add_argument(
+        "--lease-seconds",
+        type=int,
+        default=60,
+        help="Lease duration for reserved outbox records.",
+    )
+    run.set_defaults(handler=_handle_run)
 
     return parser
 
@@ -205,6 +235,59 @@ def _handle_deliver_once(args: argparse.Namespace) -> int:
     return 0
 
 
+def _handle_run(args: argparse.Namespace) -> int:
+    runtime = load_agent_runtime_config(args.bootstrap_config)
+    mqtt = runtime.delivery.mqtt
+    if mqtt is None or not mqtt.enabled:
+        raise RuntimeError("MQTT delivery settings are not configured or disabled")
+
+    streams = _synthetic_knx_streams(runtime)
+    if not streams:
+        raise RuntimeError(
+            "No supported southbound source adapters were configured. "
+            "The current local runtime supports KNX sources with connection.mode=synthetic."
+        )
+
+    state_cache = SQLitePointStateCache(runtime.storage.sqlite_path)
+    state_cache.initialize()
+    outbox = SQLiteOutbox(runtime.storage.sqlite_path)
+    outbox.initialize()
+    publisher = connect_mqtt_publisher(mqtt, agent_id=runtime.agent_id)
+    worker = DeliveryWorker(
+        runtime_config=runtime,
+        agent_id=runtime.agent_id,
+        outbox=outbox,
+        publisher=publisher,
+    )
+    edge_runtime = EdgeRuntime(
+        runtime,
+        observation_streams=streams,
+        state_store=state_cache,
+        outbox=outbox,
+        delivery_worker=worker,
+        delivery_limit=args.limit,
+        lease_seconds=args.lease_seconds,
+    )
+    try:
+        stats = asyncio.run(
+            _run_edge_runtime(edge_runtime, duration_seconds=args.duration_seconds)
+        )
+    finally:
+        publisher.close()
+
+    print(
+        "Runtime stopped: "
+        f"observations={stats.observations} "
+        f"events_enqueued={stats.events_enqueued} "
+        f"delivery_published={stats.delivery_published} "
+        f"delivery_retry={stats.delivery_retry} "
+        f"delivery_dead_letter={stats.delivery_dead_letter} "
+        f"errors={stats.errors} "
+        f"suppressed={json.dumps(stats.suppressed, sort_keys=True)}"
+    )
+    return 0
+
+
 def _runtime_summary(
     runtime: AgentRuntimeConfig,
     bootstrap_config: Path,
@@ -276,6 +359,36 @@ def _render_text_summary(summary: dict[str, Any]) -> str:
             f"publish_enabled={point['publish_enabled']}"
         )
     return "\n".join(lines)
+
+
+def _synthetic_knx_streams(
+    runtime: AgentRuntimeConfig,
+) -> list[SyntheticKnxObservationClient]:
+    streams: list[SyntheticKnxObservationClient] = []
+    for source in runtime.sources.values():
+        if (
+            source.enabled
+            and source.source_type == "knx"
+            and source.connection.get("mode") == "synthetic"
+        ):
+            streams.append(SyntheticKnxObservationClient.from_source(source))
+    return streams
+
+
+async def _run_edge_runtime(
+    runtime: EdgeRuntime,
+    *,
+    duration_seconds: float | None,
+):
+    if duration_seconds is None:
+        return await runtime.run_until_streams_complete()
+    try:
+        return await asyncio.wait_for(
+            runtime.run_until_streams_complete(),
+            timeout=max(duration_seconds, 0.0),
+        )
+    except TimeoutError:
+        return runtime.stats()
 
 
 def _select_demo_point(

@@ -12,6 +12,7 @@ members = [
     "industrial-data-platform",
     "knx-demo",
     "knx-project-parser",
+    "knx-source-emulator",
 ]
 
 [[package]]
@@ -712,6 +713,7 @@ dependencies = [
     { name = "idp-telemetry-store" },
     { name = "knx-demo" },
     { name = "knx-project-parser" },
+    { name = "knx-source-emulator" },
 ]
 
 [package.dev-dependencies]
@@ -737,6 +739,7 @@ requires-dist = [
     { name = "idp-telemetry-store", editable = "tools/idp_telemetry_store" },
     { name = "knx-demo", editable = "apps/knx_demo" },
     { name = "knx-project-parser", editable = "libs/knx_project_parser" },
+    { name = "knx-source-emulator", editable = "apps/knx_source_emulator" },
 ]
 
 [package.metadata.requires-dev]
@@ -833,6 +836,25 @@ dev = [
 
 [package.metadata]
 requires-dist = [{ name = "pyyaml", specifier = ">=6.0.3" }]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+
+[[package]]
+name = "knx-source-emulator"
+version = "0.1.0"
+source = { editable = "apps/knx_source_emulator" }
+dependencies = [
+    { name = "idp-synthetic-config" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "idp-synthetic-config", editable = "libs/idp_synthetic_config" }]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=9.0.2" }]

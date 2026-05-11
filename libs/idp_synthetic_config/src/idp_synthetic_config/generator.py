@@ -378,7 +378,10 @@ def _point(
         if publish["change_threshold"] is not None
         else "null"
     )
-    name = f"{template.label}: {device.zone}, {device.floor}"
+    name = (
+        f"{template.label} {tag_index + 1:03d}: "
+        f"{device.zone}, {device.floor}, {device.device_id}"
+    )
     description = (
         f"{template.purpose} в зоне {device.zone}, {device.floor}, "
         f"{device.tenant_space}. Периодический опрос: "
@@ -434,4 +437,3 @@ def _value_profile(point: SyntheticPoint, template: PointTemplate) -> ValueProfi
             "unit": point.unit,
         },
     )
-

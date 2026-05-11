@@ -17,6 +17,8 @@ uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent \
   enqueue-demo-event --bootstrap-config environments/demo-stand/edge_telemetry_agent/bootstrap.yaml
 uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent \
   deliver-once --bootstrap-config environments/demo-stand/edge_telemetry_agent/bootstrap.yaml
+uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent \
+  run --bootstrap-config environments/demo-stand/edge_telemetry_agent/bootstrap.yaml
 ```
 
 ## Integration Tests
@@ -32,10 +34,16 @@ uv run --group integration pytest \
 
 - `test_edge_agent_mqtt_publisher.py` — transport smoke и CLI-сценарий `enqueue-demo-event -> deliver-once`
 - `test_edge_agent_knx_to_mqtt.py` — реальный `ObservationProcessor -> SQLite outbox -> DeliveryWorker -> MQTT` для demo `knx_main`
+- `apps/edge_telemetry_agent/tests/test_runtime.py` — async runtime path, где
+  southbound observations проходят через `ObservationProcessor`, SQLite outbox
+  boundary и `DeliveryWorker`; command-точки подавляются до telemetry publish.
 - retained agent runtime/source config в edge-telemetry-agent integration fixture seed-ится
   напрямую через Kafka config delivery records, чтобы изолировать runtime агента.
   Production-like local demo seed идет через
   `Config Registry API -> outbox worker -> Kafka -> retained MQTT projection`.
+- Для synthetic local smoke `apps/knx_source_emulator` потребляет
+  `idp_synthetic_config` и отдает KNX-like события по `connection.mode=synthetic`;
+  MQTT telemetry при этом публикует только настоящий `edge_telemetry_agent`.
 
 ## Runtime Assets
 

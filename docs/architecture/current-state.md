@@ -53,7 +53,12 @@ surface как первый `Web Monitoring Module` surface.
   contract registry.
 - `Edge Telemetry Agent` с bootstrap config, загрузкой retained agent runtime/source
   config из MQTT, fail-fast validation и CLI:
-  `check-config`, `show-config`, `enqueue-demo-event`, `deliver-once`.
+  `check-config`, `show-config`, `enqueue-demo-event`, `deliver-once`, `run`.
+- Локальный `knx-source-emulator` как dev/test southbound source для
+  synthetic mall-сценариев: он потребляет `idp_synthetic_config`, seeding через
+  `Config Registry`, group addresses/value profiles и отдает KNX-like события
+  настоящему `edge_telemetry_agent`; MQTT telemetry остается ответственностью
+  edge agent.
 - Runtime-модель `tenant_id`, `asset_id`, `agent_id`, `source_id`,
   `point_ref`, `point_key`, `config_revision` и `source_config_revision`.
 - Processing pipeline для observation -> normalized telemetry event:
@@ -62,6 +67,9 @@ surface как первый `Web Monitoring Module` surface.
 - `SQLite` technical state: point state cache и delivery outbox для retry.
 - MQTT delivery slice для telemetry events, source connection status и agent LWT.
 - Demo/config bundle для `demo-stand` и первый `KNX`-срез.
+- Phase-1 synthetic KNX runtime использует `asyncio` JSON-lines adapter boundary
+  через `connection.mode=synthetic`; полноценная KNXnet/IP server compatibility
+  остается отдельным follow-up без изменения `idp/v1` contracts.
 - `Config Registry` foundation: FastAPI backend на clean architecture,
   PostgreSQL persistence, Alembic migrations, transactional outbox и Kafka
   config delivery publisher.
@@ -106,6 +114,8 @@ surface как первый `Web Monitoring Module` surface.
   ingestion`: `edge_telemetry_agent` работает как `OPC UA client` и только считывает
   данные из `OPC UA server`. `Modbus TCP`, `DB` и другие источники остаются
   future adapters.
+- Production-like local KNX simulation теперь покрывает synthetic generated
+  config path, но не считается production KNXnet/IP implementation.
 - Production security hardening: TLS/certificates/ACL/secrets lifecycle,
   конкретные broker policies, production observability и support workflows.
 

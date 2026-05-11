@@ -47,6 +47,7 @@ modules:
     status: active
     paths:
       - apps/edge_telemetry_agent
+      - apps/knx_source_emulator
       - docs/contracts/edge-telemetry-agent
       - environments
     source_of_truth:
@@ -54,6 +55,7 @@ modules:
       - arch/likec4/systems/edge-telemetry-agent
     validation:
       - "uv run --package edge-telemetry-agent pytest apps/edge_telemetry_agent/tests"
+      - "uv run --package knx-source-emulator pytest apps/knx_source_emulator/tests"
       - "uv run --group integration pytest tests/integration/test_edge_agent_mqtt_publisher.py tests/integration/test_edge_agent_knx_to_mqtt.py"
   - id: web_monitoring_module
     name: Web Monitoring Module

@@ -7,6 +7,7 @@ model {
             -> bootstrap-configuration 'Загружает agent_id и MQTT bootstrap-параметры'
             -> agent-runtime-config-cache 'Читает retained agent runtime/source configs, tenant_id, source_config_revision и point registry'
             -> field-protocol-gateways.knx-router 'Подключается к KNX/IP и читает group address и телеграммы'
+            -> field-protocol-gateways.synthetic-knx-source 'В local/dev synthetic scenario читает KNX-like events по adapter-testable boundary connection.mode=synthetic'
             -> field-protocol-gateways.modbus-gateway 'Подключается к Modbus и читает registers, coils и дискретные значения'
             -> field-protocol-gateways.opc-ua-gateway 'Подключается к OPC UA и читает nodes, subscriptions и значения'
             -> local-state-store 'Обновляет Point State Cache и сохраняет события edge.telemetry-event.v1 в Delivery Outbox'

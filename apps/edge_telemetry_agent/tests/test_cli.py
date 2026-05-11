@@ -5,6 +5,7 @@ import sqlite3
 from pathlib import Path
 
 from edge_telemetry_agent.application.configuration import build_agent_runtime_config
+from edge_telemetry_agent.application.runtime import EdgeRuntimeStats
 from edge_telemetry_agent.cli import main
 from edge_telemetry_agent.domain.config import ConfigurationError
 
@@ -282,6 +283,44 @@ def test_deliver_once_publishes_pending_outbox_event_and_marks_sent(
     with sqlite3.connect(tmp_path / "state" / "outbox.db") as connection:
         status = connection.execute("SELECT status FROM outbox").fetchone()[0]
     assert status == "sent"
+
+
+def test_run_command_wires_runtime_and_reports_stats(tmp_path, monkeypatch, capsys) -> None:
+    runtime = _runtime_config(tmp_path)
+    fake_publisher = FakePublisher()
+
+    async def fake_run(edge_runtime, *, duration_seconds):
+        assert duration_seconds == 0.25
+        return EdgeRuntimeStats(
+            observations=2,
+            events_enqueued=1,
+            delivery_published=1,
+            suppressed={"command_point": 1},
+        )
+
+    monkeypatch.setattr("edge_telemetry_agent.cli.load_agent_runtime_config", lambda path: runtime)
+    monkeypatch.setattr(
+        "edge_telemetry_agent.cli.connect_mqtt_publisher",
+        lambda settings, *, agent_id: fake_publisher,
+    )
+    monkeypatch.setattr("edge_telemetry_agent.cli._synthetic_knx_streams", lambda runtime: [object()])
+    monkeypatch.setattr("edge_telemetry_agent.cli._run_edge_runtime", fake_run)
+
+    exit_code = main(
+        [
+            "run",
+            "--bootstrap-config",
+            str(tmp_path / "bootstrap.yaml"),
+            "--duration-seconds",
+            "0.25",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "Runtime stopped: observations=2 events_enqueued=1" in captured.out
+    assert '"command_point": 1' in captured.out
+    assert fake_publisher.closed is True
 
 
 def test_check_config_command_returns_error_for_invalid_runtime(monkeypatch, capsys) -> None:

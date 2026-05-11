@@ -91,11 +91,16 @@ deployment {
 
                 bootstrap-configuration = instanceOf edge-telemetry-agent.bootstrap-configuration
                 agent-runtime-config-cache = instanceOf edge-telemetry-agent.agent-runtime-config-cache
+                knx-source-emulator = instanceOf field-protocol-gateways.synthetic-knx-source 'Local KNX Source Emulator' {
+                    technology 'apps/knx_source_emulator / 127.0.0.1:3671 / connection.mode=synthetic'
+                    description 'Local/dev phase-1 KNX-like source emulator for synthetic mall scenarios; Config Registry seeding comes from idp_synthetic_config and MQTT telemetry remains in edge_telemetry_agent.'
+                }
                 collector-runtime = instanceOf edge-telemetry-agent.collector-runtime
                 local-state-store = instanceOf edge-telemetry-agent.local-state-store
                 delivery-worker = instanceOf edge-telemetry-agent.delivery-worker
 
                 collector-runtime -> demo-stand.remote-access.public-knx-endpoint 'Подключается к стенду через whitelisted public KNX/IP endpoint'
+                collector-runtime -> knx-source-emulator 'В synthetic local smoke читает KNX-like southbound events'
                 delivery-worker -> local-mqtt-broker 'Публикует реализованные telemetry events в локальный MQTT broker; status topics остаются target contract'
             }
         }

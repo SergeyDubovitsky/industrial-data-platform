@@ -11,6 +11,12 @@ model {
             icon @/knx.svg
         }
 
+        synthetic-knx-source = field-gateway 'Synthetic KNX Source Emulator' {
+            technology 'apps/knx_source_emulator / asyncio JSON-lines / local dev'
+            description 'Локальный dev/test southbound source, который потребляет idp_synthetic_config generated model и отдает KNX-like события настоящему edge_telemetry_agent без публикации MQTT telemetry.'
+            icon @/knx.svg
+        }
+
         modbus-gateway = field-gateway 'Modbus Gateway' {
             technology 'Modbus TCP / Modbus RTU'
             icon @/modbus.svg

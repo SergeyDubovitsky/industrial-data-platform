@@ -24,6 +24,9 @@ foundation и первого `Web Monitoring Module` surface.
 - запаблишить config delivery records из `config.bundle.yaml` в Kafka
 - проверить поток
   `KNX-shaped telemetry -> edge_telemetry_agent -> MQTT -> Kafka -> ClickHouse landing`
+- для synthetic mall-сценария можно вместо физического KNX-сегмента запустить
+  `knx-source-emulator`, который отдает KNX-like events настоящему
+  `edge_telemetry_agent`; сам emulator MQTT telemetry не публикует.
 
 Этот stack не использует Redpanda broker: `Kafka Event Log` обслуживает
 локальный `Apache Kafka`, а `Redpanda Connect` используется только как
@@ -324,6 +327,29 @@ uv run --env-file .env --group integration \
   python infra/local/scripts/publish_edge_demo.py \
   --bundle-config environments/demo-stand/edge_telemetry_agent/config.bundle.yaml
 ```
+
+## Synthetic KNX source emulator
+
+Для локального production-like smoke без физического KNX-сегмента используйте
+`idp_synthetic_config` через CLI `knx-source-emulator`:
+
+```bash
+uv run --package knx-source-emulator knx-source-emulator plan --dry-run
+uv run --env-file .env --package knx-source-emulator knx-source-emulator seed-config
+uv run --package knx-source-emulator knx-source-emulator run
+```
+
+После seeding настоящий `edge_telemetry_agent` должен загрузить retained
+agent/source config из MQTT и подключиться к emulator как к southbound source:
+
+```bash
+uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent run \
+  --bootstrap-config apps/edge_telemetry_agent/config/examples/bootstrap.example.yaml
+```
+
+Текущий emulator является phase-1 local/dev adapter boundary на `asyncio`
+JSON-lines поверх `connection.mode=synthetic`; полноценная KNXnet/IP server
+compatibility остается отдельным follow-up и не меняет `idp/v1` contracts.
 
 ## Интеграционные тесты
 

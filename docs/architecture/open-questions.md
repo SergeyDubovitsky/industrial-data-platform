@@ -67,6 +67,7 @@
 | Являются ли текущие артефакты demo-стенда: `.local/Выстовка.knxproj*` и текущие YAML-файлы утвержденным source of truth для формирования первого `idp.edge.source-config.v1` bundle? | Agent runtime source of truth для edge-telemetry-agent должен приходить через retained MQTT configs, но исходная KNX-карта все равно нужна для генерации source config | Критично |
 | Подтверждены ли для первого среза `read_on_start` и семантика чтения именно для `0/0/7` и `2/0/0`? | Versioned конфиг уже включает `read_on_start`, но это нужно подтвердить эксплуатационно, чтобы не зависеть от неподдерживаемого `GroupValueRead` | Высокая |
 | Какой следующий утвержденный whitelist точек нужен после текущих `0/0/7` и `2/0/0`? | Без этого нельзя планировать второй инкремент адаптера, расширение point registry и проверку `value_model` beyond demo | Средняя |
+| Нужно ли доводить local synthetic KNX emulator до полноценной KNXnet/IP server compatibility, или phase-1 `connection.mode=synthetic` adapter boundary достаточно для dev/test smoke? | Текущий `knx-source-emulator` проверяет настоящий edge runtime path без MQTT-подмены, но использует JSON-lines southbound boundary вместо KNXnet/IP protocol server | Средняя |
 
 ## Целевая топология edge-узла
 

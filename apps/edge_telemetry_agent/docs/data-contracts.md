@@ -26,7 +26,7 @@ Observation
   -> Bootstrap Config
   -> Retained Agent Runtime Config
   -> Retained Source Configs by source_id
-  -> Protocol Decoder / Normalizer
+  -> Southbound Adapter / Protocol Decoder / Normalizer
   -> In-memory Last Value Cache
   -> SQLite Point State Cache
   -> Change Filter
@@ -48,6 +48,10 @@ Observation
 - `SQLite Point State Cache` используется для warm restart, change filtering и восстановления sequence.
 - Agent runtime/source configs публикуются через `idp_config_registry`,
   Kafka delivery log и Redpanda Connect projection как retained MQTT messages.
+- CLI `run` запускает текущий southbound runtime path. Для local/dev synthetic
+  сценария он поддерживает `source_type=knx` с `connection.mode=synthetic`,
+  где `knx-source-emulator` отдает KNX-like observations, а MQTT telemetry
+  продолжает публиковать только настоящий edge agent.
 - В текущей реализации edge-telemetry-agent публикует telemetry; config status и operational status остаются следующей фазой.
 
 ## Связанные документы

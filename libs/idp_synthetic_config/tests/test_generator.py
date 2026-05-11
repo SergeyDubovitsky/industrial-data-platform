@@ -54,6 +54,16 @@ def test_generated_points_have_stable_registry_and_knx_identifiers() -> None:
             )
 
 
+def test_generated_point_names_are_unique_at_upper_local_load_profile() -> None:
+    model = generate_synthetic_config(
+        GeneratorOptions(seed=7, devices=100, tags_per_device=100)
+    )
+    names = [point.name for source in model.sources for point in source.points]
+
+    assert len(names) == 10_000
+    assert len(set(names)) == len(names)
+
+
 def test_generated_points_cover_value_and_signal_variants_with_operator_settings() -> None:
     model = generate_synthetic_config(
         GeneratorOptions(seed=13, devices=3, tags_per_device=10)
@@ -100,4 +110,3 @@ def test_generation_rejects_scale_above_local_load_profile() -> None:
 
     with pytest.raises(ValueError, match="tags_per_device"):
         generate_synthetic_config(GeneratorOptions(tags_per_device=101))
-
