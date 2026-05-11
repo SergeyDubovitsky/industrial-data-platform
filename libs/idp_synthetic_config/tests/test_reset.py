@@ -47,6 +47,16 @@ def test_non_local_reset_requires_explicit_destructive_opt_in() -> None:
         )
 
 
+def test_unlisted_single_label_endpoint_is_not_treated_as_local() -> None:
+    model = generate_synthetic_config(GeneratorOptions(seed=1))
+
+    with pytest.raises(DestructiveResetRefused, match="non-local"):
+        ResetPolicy().evaluate(
+            model,
+            config_registry_url="http://staging:8000",
+        )
+
+
 def test_non_local_reset_with_opt_in_records_warning() -> None:
     model = generate_synthetic_config(GeneratorOptions(seed=1))
 
@@ -59,3 +69,19 @@ def test_non_local_reset_with_opt_in_records_warning() -> None:
     assert summary.warning is not None
     assert "--allow-destructive-reset" in summary.warning
 
+
+def test_configured_unimplemented_reset_targets_are_reported_as_unsupported() -> None:
+    model = generate_synthetic_config(GeneratorOptions(seed=1))
+
+    summary = ResetPolicy(
+        clickhouse_url="http://localhost:8123",
+        mqtt_broker_url="mqtt://localhost:1883",
+    ).evaluate(
+        model,
+        config_registry_url="http://localhost:8000",
+    )
+
+    statuses = {target.name: target.status for target in summary.targets}
+    assert statuses["config_registry"] == "planned"
+    assert statuses["clickhouse"] == "unsupported"
+    assert statuses["mqtt_retained_config"] == "unsupported"

@@ -56,6 +56,9 @@ class UpdatePointCommand:
 class DeletePointCommand:
     tenant_id: str
     point_id: str
+    asset_id: str | None = None
+    agent_id: str | None = None
+    source_id: str | None = None
 
 
 class CreatePoint:
@@ -211,10 +214,22 @@ class DeletePoint:
 
     async def execute(self, command: DeletePointCommand) -> None:
         async with self._unit_of_work as unit_of_work:
-            if await unit_of_work.points.get_by_id(command.tenant_id, command.point_id) is None:
+            point = await unit_of_work.points.get_by_id(
+                command.tenant_id,
+                command.point_id,
+            )
+            if point is None or not _point_matches_delete_scope(point, command):
                 raise PointNotFoundError(command.tenant_id, command.point_id)
             await unit_of_work.points.delete(command.tenant_id, command.point_id)
             await unit_of_work.commit()
+
+
+def _point_matches_delete_scope(point: Point, command: DeletePointCommand) -> bool:
+    return (
+        (command.asset_id is None or point.asset_id == command.asset_id)
+        and (command.agent_id is None or point.agent_id == command.agent_id)
+        and (command.source_id is None or point.source_id == command.source_id)
+    )
 
 
 class ListPoints:

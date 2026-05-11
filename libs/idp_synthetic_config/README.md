@@ -28,5 +28,6 @@ destructive reset unless `--allow-destructive-reset` is provided. The current
 Config Registry API exposes an agent-scoped registry graph cleanup endpoint, so
 the seeder clears generated config outbox records, rendered config revisions,
 points, sources, agent, and empty parent asset/tenant records in one request
-before recreating the desired model. Other reset targets are reported in the
-machine-readable reset summary and are skipped unless explicitly configured.
+before recreating the desired model. ClickHouse and MQTT retained cleanup are
+reported in the machine-readable reset summary as `unsupported` when configured;
+they are not executed by this package yet.

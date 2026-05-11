@@ -113,6 +113,9 @@ async def list_points(
 )
 async def delete_point(
     tenant_id: str,
+    asset_id: str,
+    agent_id: str,
+    source_id: str,
     point_id: str,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> None:
@@ -120,6 +123,9 @@ async def delete_point(
         await DeletePoint(unit_of_work_factory()).execute(
             DeletePointCommand(
                 tenant_id=tenant_id,
+                asset_id=asset_id,
+                agent_id=agent_id,
+                source_id=source_id,
                 point_id=point_id,
             )
         )

@@ -283,6 +283,51 @@ def test_delete_point_removes_existing_point() -> None:
     assert list_response.json() == []
 
 
+def test_delete_point_rejects_point_id_outside_url_scope() -> None:
+    client = TestClient(create_app())
+    client.post("/tenants", json={"tenant_id": "tenant-a", "name": "Tenant A"})
+    for asset_id, agent_id, source_id in (
+        ("asset-a", "agent-a", "knx-main"),
+        ("asset-b", "agent-b", "knx-secondary"),
+    ):
+        client.post(
+            "/tenants/tenant-a/assets",
+            json={"asset_id": asset_id, "name": asset_id},
+        )
+        client.post(
+            f"/tenants/tenant-a/assets/{asset_id}/agents",
+            json={"agent_id": agent_id},
+        )
+        client.post(
+            f"/tenants/tenant-a/assets/{asset_id}/agents/{agent_id}/sources",
+            json={"source_id": source_id, "source_type": "knx"},
+        )
+    client.post(
+        "/tenants/tenant-a/assets/asset-a/agents/agent-a/sources/knx-main/points",
+        json={
+            "point_id": "shared-point",
+            "point_key": "lights.main",
+            "point_ref": "1/1/1",
+            "name": "Main Light",
+            "value_type": "boolean",
+            "value_model": "1.001",
+            "signal_type": "feedback",
+        },
+    )
+
+    delete_response = client.delete(
+        "/tenants/tenant-a/assets/asset-b/agents/agent-b"
+        "/sources/knx-secondary/points/shared-point"
+    )
+    list_response = client.get(
+        "/tenants/tenant-a/assets/asset-a/agents/agent-a"
+        "/sources/knx-main/points"
+    )
+
+    assert delete_response.status_code == 404
+    assert [point["point_id"] for point in list_response.json()] == ["shared-point"]
+
+
 def test_delete_agent_registry_graph_removes_rendered_slice() -> None:
     client = TestClient(create_app())
     _create_renderable_graph(client)

@@ -4,6 +4,7 @@ import pytest
 
 from idp_config_registry.application.errors import (
     DuplicatePointError,
+    PointNotFoundError,
     SourceNotFoundError,
 )
 from idp_config_registry.application.use_cases.agents import (
@@ -17,6 +18,8 @@ from idp_config_registry.application.use_cases.assets import (
 from idp_config_registry.application.use_cases.points import (
     CreatePoint,
     CreatePointCommand,
+    DeletePoint,
+    DeletePointCommand,
     ListPoints,
 )
 from idp_config_registry.application.use_cases.sources import (
@@ -175,3 +178,30 @@ async def test_list_points_rejects_missing_source() -> None:
             "agent-a",
             "knx-main",
         )
+
+
+async def test_delete_point_rejects_matching_id_outside_requested_scope() -> None:
+    unit_of_work_factory = InMemoryUnitOfWorkFactory()
+    await _create_tenant_asset_agent_and_source(unit_of_work_factory)
+    await CreatePoint(unit_of_work_factory()).execute(_point_command())
+
+    with pytest.raises(PointNotFoundError):
+        await DeletePoint(unit_of_work_factory()).execute(
+            DeletePointCommand(
+                tenant_id="tenant-a",
+                asset_id="other-asset",
+                agent_id="agent-a",
+                source_id="knx-main",
+                point_id="tenant-a|asset-a|knx-main|lights.main",
+            )
+        )
+
+    points = await ListPoints(unit_of_work_factory()).execute(
+        "tenant-a",
+        "asset-a",
+        "agent-a",
+        "knx-main",
+    )
+    assert [point.point_id for point in points] == [
+        "tenant-a|asset-a|knx-main|lights.main"
+    ]

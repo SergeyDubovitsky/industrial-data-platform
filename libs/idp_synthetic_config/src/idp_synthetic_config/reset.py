@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from ipaddress import ip_address
 from urllib.parse import urlparse
 
 from idp_synthetic_config.models import JsonObject, SyntheticModel
@@ -14,6 +15,7 @@ LOCAL_HOSTS = {
     "clickhouse",
     "mqtt-broker",
     "redpanda-connect",
+    "host.docker.internal",
 }
 
 
@@ -113,21 +115,22 @@ class ResetPolicy:
             ),
             ResetTargetSummary(
                 name="clickhouse",
-                status="planned" if self.clickhouse_url else "skipped",
+                status="unsupported" if self.clickhouse_url else "skipped",
                 records_affected=0,
                 detail=(
-                    f"Would clean synthetic tenant {model.tenant.tenant_id!r} via "
-                    f"{self.clickhouse_url}."
+                    "ClickHouse reset is not implemented yet; configured URL "
+                    f"{self.clickhouse_url} was not used."
                     if self.clickhouse_url
                     else "ClickHouse reset URL was not configured."
                 ),
             ),
             ResetTargetSummary(
                 name="mqtt_retained_config",
-                status="planned" if self.mqtt_broker_url else "skipped",
+                status="unsupported" if self.mqtt_broker_url else "skipped",
                 records_affected=0,
                 detail=(
-                    f"Would clear retained config topics via {self.mqtt_broker_url}."
+                    "MQTT retained config reset is not implemented yet; configured "
+                    f"broker URL {self.mqtt_broker_url} was not used."
                     if self.mqtt_broker_url
                     else "MQTT retained reset endpoint was not configured."
                 ),
@@ -146,8 +149,10 @@ def is_local_endpoint(url: str) -> bool:
     hostname = parsed.hostname
     if hostname is None:
         return False
+    hostname = hostname.lower()
     if hostname in LOCAL_HOSTS:
         return True
-    if hostname.startswith("127."):
-        return True
-    return "." not in hostname
+    try:
+        return ip_address(hostname).is_loopback
+    except ValueError:
+        return False
