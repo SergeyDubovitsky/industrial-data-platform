@@ -18,7 +18,7 @@ uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent \
 uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent \
   deliver-once --bootstrap-config environments/demo-stand/edge_telemetry_agent/bootstrap.yaml
 uv run --env-file .env --package edge-telemetry-agent edge-telemetry-agent \
-  run-source-adapter --bootstrap-config environments/demo-stand/edge_telemetry_agent/bootstrap.yaml \
+  run-source-adapter --bootstrap-config apps/edge_telemetry_agent/config/examples/bootstrap.synthetic-emulator.yaml \
   --source-id knx_synthetic --max-events 1
 ```
 

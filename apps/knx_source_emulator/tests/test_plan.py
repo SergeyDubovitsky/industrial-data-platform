@@ -32,6 +32,7 @@ def test_emulator_plan_uses_synthetic_config_points_and_value_profiles() -> None
 
     temperature = next(point for point in plan.points if point.value_type == "number")
     assert "Температура" in temperature.name
+    assert temperature.description is not None
     assert "Периодический опрос" in temperature.description
     assert temperature.periodic_interval_seconds == 60
     assert temperature.change_threshold == 0.5
@@ -87,3 +88,21 @@ def test_plan_can_be_built_from_rendered_source_config_and_value_profiles() -> N
     assert first_point.periodic_interval_seconds == 60
     assert first_point.change_threshold == 0.5
     assert first_point.profile.parameters["base"] == 22.0
+
+
+def test_plan_accepts_nullable_point_description_from_contract_payload() -> None:
+    model = generate_synthetic_config(
+        GeneratorOptions(devices=1, tags_per_device=1, seed=11)
+    )
+    source_config = model.source_config_payloads(
+        config_revision="rev-test",
+        source_config_revisions={"knx_synthetic": "rev-test-knx_synthetic"},
+    )[0]
+    source_config["points"][0]["description"] = None
+
+    plan = build_emulator_plan_from_source_config(
+        source_config,
+        value_profiles=model.value_profiles,
+    )
+
+    assert plan.points[0].description is None

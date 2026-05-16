@@ -15,7 +15,7 @@ class EmulatorPoint:
     point_ref: str
     point_key: str
     name: str
-    description: str
+    description: str | None
     value_type: str
     value_model: str
     signal_type: str
@@ -190,7 +190,7 @@ def build_emulator_plan_from_source_config(
                 point_ref=point_ref,
                 point_key=point_key,
                 name=_required_string(item, "name"),
-                description=_required_string(item, "description"),
+                description=_optional_string(item, "description"),
                 value_type=_required_string(item, "value_type"),
                 value_model=_required_string(item, "value_model"),
                 signal_type=_required_string(item, "signal_type"),

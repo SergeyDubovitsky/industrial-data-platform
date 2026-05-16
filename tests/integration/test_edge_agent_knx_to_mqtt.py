@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import socket
 import subprocess
 import threading
 from dataclasses import replace
@@ -47,37 +46,24 @@ def test_synthetic_tcp_emulator_edge_delivery_flow_reaches_mqtt_kafka_and_clickh
     )
     config_revision = "rev-synthetic-e2e-001"
     source_config_revisions = model.source_config_revisions(config_revision)
-    emulator_port = _reserve_tcp_port()
     bootstrap_path = _write_bootstrap_config(
         tmp_path,
         agent_id=model.agent.agent_id,
         broker=f"mqtt://127.0.0.1:{local_full_storage_stack.mqtt_port}",
     )
-    source_config_payload = _seed_synthetic_config_via_registry(
-        local_stack=local_full_storage_stack,
-        model=model,
+    source_config_payload = model.source_config_payloads(
         config_revision=config_revision,
         source_config_revisions=source_config_revisions,
-        host="127.0.0.1",
-        port=emulator_port,
-    )
+    )[0]
     plan = build_emulator_plan_from_source_config(
         source_config_payload,
         value_profiles=model.value_profiles,
         devices=len(model.devices),
+        host="127.0.0.1",
+        port=0,
         emission_interval_seconds=0.05,
     )
     point = plan.stream_points[0]
-    source_point = source_config_payload["points"][0]
-    assert point.point_ref == source_point["point_ref"]
-    assert point.point_key == source_point["point_key"]
-    assert point.name == source_point["name"]
-    assert point.description == source_point["description"]
-    assert point.periodic_interval_seconds == (
-        source_point["acquisition"]["periodic_interval_seconds"]
-    )
-    assert point.change_threshold == source_point["publish"]["change_threshold"]
-    assert point.profile.parameters["base"] == 22.0
 
     topic = (
         f"idp/v1/assets/{model.asset.asset_id}/agents/{model.agent.agent_id}"
@@ -133,6 +119,39 @@ def test_synthetic_tcp_emulator_edge_delivery_flow_reaches_mqtt_kafka_and_clickh
     try:
         async def run_emulator_and_agent() -> None:
             async with server:
+                host, port = server.bound_address
+                retained_source_config_payload = await asyncio.to_thread(
+                    _seed_synthetic_config_via_registry,
+                    local_stack=local_full_storage_stack,
+                    model=model,
+                    config_revision=config_revision,
+                    source_config_revisions=source_config_revisions,
+                    host=host,
+                    port=port,
+                )
+                retained_plan = build_emulator_plan_from_source_config(
+                    retained_source_config_payload,
+                    value_profiles=model.value_profiles,
+                    devices=len(model.devices),
+                    emission_interval_seconds=0.05,
+                )
+                retained_point = retained_plan.stream_points[0]
+                source_point = retained_source_config_payload["points"][0]
+                assert retained_plan.host == host
+                assert retained_plan.port == port
+                assert retained_point.point_ref == source_point["point_ref"]
+                assert retained_point.point_key == source_point["point_key"]
+                assert retained_point.point_ref == point.point_ref
+                assert retained_point.point_key == point.point_key
+                assert retained_point.name == source_point["name"]
+                assert retained_point.description == source_point["description"]
+                assert retained_point.periodic_interval_seconds == (
+                    source_point["acquisition"]["periodic_interval_seconds"]
+                )
+                assert retained_point.change_threshold == source_point["publish"][
+                    "change_threshold"
+                ]
+                assert retained_point.profile.parameters["base"] == 22.0
                 result = await asyncio.to_thread(
                     _run_edge_source_adapter_cli,
                     bootstrap_path,
@@ -422,13 +441,6 @@ def _run_edge_source_adapter_cli(
         check=False,
         timeout=60,
     )
-
-
-def _reserve_tcp_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        sock.listen()
-        return int(sock.getsockname()[1])
 
 
 def _seed_config_delivery_records(*, local_stack, bundle) -> None:

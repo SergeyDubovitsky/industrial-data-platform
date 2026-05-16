@@ -64,6 +64,8 @@ jobs:
                       test_path: apps/edge_telemetry_agent/tests
                     - package: knx-demo
                       test_path: apps/knx_demo/tests
+                    - package: knx-source-emulator
+                      test_path: apps/knx_source_emulator/tests
                     - package: idp-config-registry
                       test_path: apps/idp_config_registry/tests
                     - package: knx-project-parser
