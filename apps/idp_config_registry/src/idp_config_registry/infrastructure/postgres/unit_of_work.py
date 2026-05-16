@@ -42,7 +42,7 @@ from idp_config_registry.infrastructure.postgres.models import (
 
 def _tenant_from_model(model: TenantModel) -> Tenant:
     return Tenant(
-        tenant_id=model.code,
+        tenant_id=model.tenant_id,
         name=model.name,
         status=TenantStatus(model.status),
         created_at=model.created_at,
@@ -52,8 +52,8 @@ def _tenant_from_model(model: TenantModel) -> Tenant:
 
 def _asset_from_row(model: AssetModel, tenant: TenantModel) -> Asset:
     return Asset(
-        tenant_id=tenant.code,
-        asset_id=model.code,
+        tenant_id=tenant.tenant_id,
+        asset_id=model.asset_id,
         name=model.name,
         description=model.description,
         status=AssetStatus(model.status),
@@ -68,9 +68,9 @@ def _agent_from_row(
     tenant: TenantModel,
 ) -> Agent:
     return Agent(
-        tenant_id=tenant.code,
-        asset_id=asset.code,
-        agent_id=model.code,
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=model.agent_id,
         name=model.name,
         status=AgentStatus(model.status),
         bootstrap_hint_json=dict(model.bootstrap_hint_json),
@@ -86,10 +86,10 @@ def _source_from_row(
     tenant: TenantModel,
 ) -> Source:
     return Source(
-        tenant_id=tenant.code,
-        asset_id=asset.code,
-        agent_id=agent.code,
-        source_id=model.code,
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        source_id=model.source_id,
         source_type=model.source_type,
         enabled=model.enabled,
         name=model.name,
@@ -110,11 +110,11 @@ def _point_from_row(
     tenant: TenantModel,
 ) -> Point:
     return Point(
-        tenant_id=tenant.code,
-        asset_id=asset.code,
-        agent_id=agent.code,
-        source_id=source.code,
-        point_id=model.code,
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        source_id=source.source_id,
+        point_id=model.point_id,
         point_key=model.point_key,
         point_ref=model.point_ref,
         name=model.name,
@@ -139,10 +139,10 @@ def _agent_runtime_config_revision_from_row(
     tenant: TenantModel,
 ) -> AgentRuntimeConfigRevision:
     return AgentRuntimeConfigRevision(
-        tenant_id=tenant.code,
-        asset_id=asset.code,
-        agent_id=agent.code,
-        config_revision=model.code,
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        config_revision=model.config_revision,
         status=ConfigRevisionStatus(model.status),
         issued_at=model.issued_at,
         agent_runtime_payload_json=dict(model.agent_runtime_payload_json),
@@ -158,11 +158,11 @@ def _source_config_revision_from_row(
     tenant: TenantModel,
 ) -> SourceConfigRevision:
     return SourceConfigRevision(
-        tenant_id=tenant.code,
-        asset_id=asset.code,
-        agent_id=agent.code,
-        source_id=source.code,
-        source_config_revision=model.code,
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        source_id=source.source_id,
+        source_config_revision=model.source_config_revision,
         config_revision=model.config_revision,
         status=ConfigRevisionStatus(model.status),
         issued_at=model.issued_at,
@@ -179,14 +179,14 @@ def _config_outbox_from_row(
     source: SourceModel | None,
 ) -> ConfigOutboxRecord:
     return ConfigOutboxRecord(
-        tenant_id=tenant.code,
+        tenant_id=tenant.tenant_id,
         outbox_id=model.id,
         idempotency_key=model.idempotency_key,
-        asset_id=asset.code,
-        agent_id=agent.code,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
         config_revision=model.config_revision,
         config_scope=model.config_scope,
-        source_id=source.code if source is not None else None,
+        source_id=source.source_id if source is not None else None,
         source_config_revision=model.source_config_revision,
         message_type=model.message_type,
         kafka_topic=model.kafka_topic,
