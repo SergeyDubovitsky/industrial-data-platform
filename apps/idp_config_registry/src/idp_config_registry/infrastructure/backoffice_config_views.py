@@ -60,16 +60,16 @@ class AgentRuntimeConfigRevisionBackofficeView(
     category = "Config Revisions"
     column_list = model_columns(
         AgentRuntimeConfigRevisionModel,
-        "tenant_id",
-        "agent_id",
-        "code",
+        "tenant_uuid",
+        "agent_uuid",
+        "config_revision",
         "status",
         "issued_at",
         "created_at",
     )
     column_details_list = all_model_columns(AgentRuntimeConfigRevisionModel)
     form_columns = [
-        "code",
+        "config_revision",
         "issued_at",
         "agent_runtime_payload_json",
     ]
@@ -132,9 +132,9 @@ class SourceConfigRevisionBackofficeView(
     category = "Config Revisions"
     column_list = model_columns(
         SourceConfigRevisionModel,
-        "tenant_id",
-        "source_id",
-        "code",
+        "tenant_uuid",
+        "source_uuid",
+        "source_config_revision",
         "config_revision",
         "status",
         "issued_at",
@@ -142,7 +142,7 @@ class SourceConfigRevisionBackofficeView(
     )
     column_details_list = all_model_columns(SourceConfigRevisionModel)
     form_columns = [
-        "code",
+        "source_config_revision",
         "config_revision",
         "issued_at",
         "source_payload_json",
@@ -204,12 +204,12 @@ class ConfigOutboxBackofficeView(ReadOnlyBackofficeModelView, model=ConfigOutbox
     column_list = model_columns(
         ConfigOutboxModel,
         "status",
-        "tenant_id",
-        "agent_id",
+        "tenant_uuid",
+        "agent_uuid",
         "config_revision",
         "config_scope",
         "message_type",
-        "source_id",
+        "source_uuid",
         "attempt_count",
         "updated_at",
     )
@@ -221,9 +221,9 @@ def _agent_runtime_config_revision_model(
 ) -> AgentRuntimeConfigRevisionModel:
     return AgentRuntimeConfigRevisionModel(
         id=uuid4(),
-        tenant_id=uuid4(),
-        agent_id=uuid4(),
-        code=revision.config_revision,
+        tenant_uuid=uuid4(),
+        agent_uuid=uuid4(),
+        config_revision=revision.config_revision,
         status=revision.status.value,
         issued_at=revision.issued_at,
         agent_runtime_payload_json=dict(revision.agent_runtime_payload_json),
@@ -236,10 +236,10 @@ def _source_config_revision_model(
 ) -> SourceConfigRevisionModel:
     return SourceConfigRevisionModel(
         id=uuid4(),
-        tenant_id=uuid4(),
-        source_id=uuid4(),
-        agent_runtime_config_revision_id=uuid4(),
-        code=revision.source_config_revision,
+        tenant_uuid=uuid4(),
+        source_uuid=uuid4(),
+        agent_runtime_config_revision_uuid=uuid4(),
+        source_config_revision=revision.source_config_revision,
         config_revision=revision.config_revision,
         status=revision.status.value,
         issued_at=revision.issued_at,
@@ -261,7 +261,7 @@ async def _agent_runtime_config_revision_model_for_response(
         revision.config_revision,
     )
     if row is not None:
-        model.id, model.tenant_id, model.agent_id = row
+        model.id, model.tenant_uuid, model.agent_uuid = row
     return model
 
 
@@ -282,9 +282,9 @@ async def _source_config_revision_model_for_response(
     if row is not None:
         (
             model.id,
-            model.tenant_id,
-            model.source_id,
-            model.agent_runtime_config_revision_id,
+            model.tenant_uuid,
+            model.source_uuid,
+            model.agent_runtime_config_revision_uuid,
         ) = row
     return model
 
@@ -303,17 +303,17 @@ async def _agent_runtime_config_revision_internal_ids_by_codes(
         result = await session.execute(
             select(
                 AgentRuntimeConfigRevisionModel.id,
-                AgentRuntimeConfigRevisionModel.tenant_id,
-                AgentRuntimeConfigRevisionModel.agent_id,
+                AgentRuntimeConfigRevisionModel.tenant_uuid,
+                AgentRuntimeConfigRevisionModel.agent_uuid,
             )
-            .join(AgentModel, AgentRuntimeConfigRevisionModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, AgentRuntimeConfigRevisionModel.tenant_id == TenantModel.id)
+            .join(AgentModel, AgentRuntimeConfigRevisionModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, AgentRuntimeConfigRevisionModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
-                AgentRuntimeConfigRevisionModel.code == config_revision_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
+                AgentRuntimeConfigRevisionModel.config_revision == config_revision_code,
             )
         )
         row = result.first()
@@ -336,20 +336,20 @@ async def _source_config_revision_internal_ids_by_codes(
         result = await session.execute(
             select(
                 SourceConfigRevisionModel.id,
-                SourceConfigRevisionModel.tenant_id,
-                SourceConfigRevisionModel.source_id,
-                SourceConfigRevisionModel.agent_runtime_config_revision_id,
+                SourceConfigRevisionModel.tenant_uuid,
+                SourceConfigRevisionModel.source_uuid,
+                SourceConfigRevisionModel.agent_runtime_config_revision_uuid,
             )
-            .join(SourceModel, SourceConfigRevisionModel.source_id == SourceModel.id)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, SourceConfigRevisionModel.tenant_id == TenantModel.id)
+            .join(SourceModel, SourceConfigRevisionModel.source_uuid == SourceModel.id)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, SourceConfigRevisionModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
-                SourceModel.code == source_code,
-                SourceConfigRevisionModel.code == source_config_revision_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
+                SourceModel.source_id == source_code,
+                SourceConfigRevisionModel.source_config_revision == source_config_revision_code,
                 SourceConfigRevisionModel.config_revision == config_revision,
             )
         )

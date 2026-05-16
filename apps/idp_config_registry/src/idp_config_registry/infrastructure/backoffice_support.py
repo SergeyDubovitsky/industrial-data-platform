@@ -72,7 +72,7 @@ class ReadOnlyBackofficeModelView(BackofficeModelView):
 
 
 def all_model_columns(model: type[Any]) -> list[Any]:
-    return list(model.__table__.columns)
+    return [getattr(model, column.key) for column in model.__mapper__.column_attrs]
 
 
 def model_columns(model: type[Any], *names: str) -> list[Any]:

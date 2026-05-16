@@ -88,24 +88,24 @@ from idp_config_registry.settings import ConfigRegistrySettings
 CONFIG_REGISTRY_SRC = Path(__file__).resolve().parents[1] / "src" / "idp_config_registry"
 
 LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...] = (
-    (TenantBackofficeView, TenantModel, ("code", "name", "status", "updated_at")),
+    (TenantBackofficeView, TenantModel, ("tenant_id", "name", "status", "updated_at")),
     (
         AssetBackofficeView,
         AssetModel,
-        ("tenant_id", "code", "name", "status", "updated_at"),
+        ("tenant_uuid", "asset_id", "name", "status", "updated_at"),
     ),
     (
         AgentBackofficeView,
         AgentModel,
-        ("tenant_id", "asset_id", "code", "name", "status", "updated_at"),
+        ("tenant_uuid", "asset_uuid", "agent_id", "name", "status", "updated_at"),
     ),
     (
         SourceBackofficeView,
         SourceModel,
         (
-            "tenant_id",
-            "agent_id",
-            "code",
+            "tenant_uuid",
+            "agent_uuid",
+            "source_id",
             "source_type",
             "enabled",
             "name",
@@ -116,9 +116,9 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
         PointBackofficeView,
         PointModel,
         (
-            "tenant_id",
-            "source_id",
-            "code",
+            "tenant_uuid",
+            "source_uuid",
+            "point_id",
             "point_key",
             "name",
             "value_type",
@@ -130,15 +130,22 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
     (
         AgentRuntimeConfigRevisionBackofficeView,
         AgentRuntimeConfigRevisionModel,
-        ("tenant_id", "agent_id", "code", "status", "issued_at", "created_at"),
+        (
+            "tenant_uuid",
+            "agent_uuid",
+            "config_revision",
+            "status",
+            "issued_at",
+            "created_at",
+        ),
     ),
     (
         SourceConfigRevisionBackofficeView,
         SourceConfigRevisionModel,
         (
-            "tenant_id",
-            "source_id",
-            "code",
+            "tenant_uuid",
+            "source_uuid",
+            "source_config_revision",
             "config_revision",
             "status",
             "issued_at",
@@ -150,12 +157,12 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
         ConfigOutboxModel,
         (
             "status",
-            "tenant_id",
-            "agent_id",
+            "tenant_uuid",
+            "agent_uuid",
             "config_revision",
             "config_scope",
             "message_type",
-            "source_id",
+            "source_uuid",
             "attempt_count",
             "updated_at",
         ),
@@ -173,10 +180,6 @@ BUSINESS_VIEWS: tuple[type[object], ...] = (
 
 def _is_code_attribute(node: ast.expr) -> bool:
     return isinstance(node, ast.Attribute) and node.attr == "code"
-
-
-def _name(node: ast.expr) -> str | None:
-    return node.id if isinstance(node, ast.Name) else None
 
 
 def test_backoffice_mounts_in_internal_mode_with_postgres_uow() -> None:
@@ -1029,12 +1032,12 @@ async def test_agent_runtime_config_revision_create_returns_sqladmin_uuid_ids(
         },
     )
 
-    assert (model.id, model.tenant_id, model.agent_id) == (
+    assert (model.id, model.tenant_uuid, model.agent_uuid) == (
         revision_uuid,
         tenant_uuid,
         agent_uuid,
     )
-    assert model.code == "rev-sqladmin"
+    assert model.config_revision == "rev-sqladmin"
 
 
 @pytest.mark.asyncio
@@ -1166,16 +1169,16 @@ async def test_source_config_revision_create_returns_sqladmin_uuid_ids(
 
     assert (
         model.id,
-        model.tenant_id,
-        model.source_id,
-        model.agent_runtime_config_revision_id,
+        model.tenant_uuid,
+        model.source_uuid,
+        model.agent_runtime_config_revision_uuid,
     ) == (
         source_revision_uuid,
         tenant_uuid,
         source_uuid,
         runtime_revision_uuid,
     )
-    assert model.code == "src-rev-sqladmin"
+    assert model.source_config_revision == "src-rev-sqladmin"
 
 
 @pytest.mark.asyncio
@@ -1215,9 +1218,9 @@ def test_backoffice_list_views_show_compact_column_sets(
     model: type[object],
     expected_columns: tuple[str, ...],
 ) -> None:
-    assert [column.name for column in view.column_list] == list(expected_columns)
-    assert [column.name for column in view.column_details_list] == [
-        column.name for column in model.__table__.columns
+    assert [column.key for column in view.column_list] == list(expected_columns)
+    assert [column.key for column in view.column_details_list] == [
+        column.key for column in model.__mapper__.column_attrs
     ]
 
 
@@ -1249,38 +1252,62 @@ def test_sqladmin_dependency_stays_out_of_domain_and_application_layers() -> Non
             assert "sqladmin" not in path.read_text(encoding="utf-8")
 
 
-def test_storage_code_lookups_use_code_named_values() -> None:
+def test_storage_mapping_does_not_use_code_as_python_identifier() -> None:
     guarded_paths = [
         CONFIG_REGISTRY_SRC / "infrastructure" / "postgres" / "unit_of_work.py",
         CONFIG_REGISTRY_SRC / "infrastructure" / "backoffice_business_views.py",
         CONFIG_REGISTRY_SRC / "infrastructure" / "backoffice_config_views.py",
     ]
-    public_id_names = {
-        "tenant_id",
-        "asset_id",
-        "agent_id",
-        "source_id",
-        "point_id",
-        "config_revision",
-        "source_config_revision",
-    }
     violations: list[str] = []
 
     for path in guarded_paths:
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            if not isinstance(node, ast.Compare):
-                continue
-            operands = [node.left, *node.comparators]
-            for left, right, operator in zip(operands, operands[1:], node.ops):
-                if not isinstance(operator, ast.Eq):
-                    continue
-                if _is_code_attribute(left) and _name(right) in public_id_names:
-                    violations.append(f"{path}:{node.lineno}")
-                if _is_code_attribute(right) and _name(left) in public_id_names:
-                    violations.append(f"{path}:{node.lineno}")
+            if _is_code_attribute(node):
+                violations.append(f"{path}:{node.lineno}")
+            if isinstance(node, ast.keyword) and node.arg == "code":
+                violations.append(f"{path}:{node.lineno}")
 
     assert violations == []
+
+
+def test_postgres_models_name_public_ids_and_internal_uuids_explicitly() -> None:
+    public_identifier_columns = [
+        (TenantModel, "tenant_id"),
+        (AssetModel, "asset_id"),
+        (AgentModel, "agent_id"),
+        (SourceModel, "source_id"),
+        (PointModel, "point_id"),
+        (AgentRuntimeConfigRevisionModel, "config_revision"),
+        (SourceConfigRevisionModel, "source_config_revision"),
+    ]
+    for model, attr_name in public_identifier_columns:
+        assert not hasattr(model, "code")
+        assert getattr(model, attr_name).property.columns[0].name == "code"
+
+    internal_uuid_columns = [
+        (AssetModel, "tenant_uuid", "tenant_id"),
+        (AgentModel, "tenant_uuid", "tenant_id"),
+        (AgentModel, "asset_uuid", "asset_id"),
+        (SourceModel, "tenant_uuid", "tenant_id"),
+        (SourceModel, "agent_uuid", "agent_id"),
+        (PointModel, "tenant_uuid", "tenant_id"),
+        (PointModel, "source_uuid", "source_id"),
+        (AgentRuntimeConfigRevisionModel, "tenant_uuid", "tenant_id"),
+        (AgentRuntimeConfigRevisionModel, "agent_uuid", "agent_id"),
+        (SourceConfigRevisionModel, "tenant_uuid", "tenant_id"),
+        (SourceConfigRevisionModel, "source_uuid", "source_id"),
+        (
+            SourceConfigRevisionModel,
+            "agent_runtime_config_revision_uuid",
+            "agent_runtime_config_revision_id",
+        ),
+        (ConfigOutboxModel, "tenant_uuid", "tenant_id"),
+        (ConfigOutboxModel, "agent_uuid", "agent_id"),
+        (ConfigOutboxModel, "source_uuid", "source_id"),
+    ]
+    for model, attr_name, column_name in internal_uuid_columns:
+        assert getattr(model, attr_name).property.columns[0].name == column_name
 
 
 def test_custom_list_template_keeps_sqladmin_bulk_action_modals() -> None:

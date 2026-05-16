@@ -36,7 +36,7 @@ class TenantModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_id: Mapped[str] = mapped_column("code", Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -69,8 +69,12 @@ class AssetModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    asset_id: Mapped[str] = mapped_column("code", Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, nullable=False)
@@ -112,9 +116,17 @@ class AgentModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    asset_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    asset_uuid: Mapped[UUID] = mapped_column(
+        "asset_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    agent_id: Mapped[str] = mapped_column("code", Text, nullable=False)
     name: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     bootstrap_hint_json: Mapped[dict[str, Any]] = mapped_column(
@@ -162,9 +174,17 @@ class SourceModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    agent_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    agent_uuid: Mapped[UUID] = mapped_column(
+        "agent_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    source_id: Mapped[str] = mapped_column("code", Text, nullable=False)
     source_type: Mapped[str] = mapped_column(Text, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     name: Mapped[str | None] = mapped_column(Text)
@@ -227,9 +247,17 @@ class PointModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    source_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    source_uuid: Mapped[UUID] = mapped_column(
+        "source_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    point_id: Mapped[str] = mapped_column("code", Text, nullable=False)
     point_key: Mapped[str] = mapped_column(String(512), nullable=False)
     point_ref: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
@@ -301,9 +329,17 @@ class AgentRuntimeConfigRevisionModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    agent_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    agent_uuid: Mapped[UUID] = mapped_column(
+        "agent_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    config_revision: Mapped[str] = mapped_column("code", Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     agent_runtime_payload_json: Mapped[dict[str, Any]] = mapped_column(
@@ -352,13 +388,22 @@ class SourceConfigRevisionModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    source_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    agent_runtime_config_revision_id: Mapped[UUID] = mapped_column(
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
         PostgresUUID(as_uuid=True),
         nullable=False,
     )
-    code: Mapped[str] = mapped_column(Text, nullable=False)
+    source_uuid: Mapped[UUID] = mapped_column(
+        "source_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    agent_runtime_config_revision_uuid: Mapped[UUID] = mapped_column(
+        "agent_runtime_config_revision_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    source_config_revision: Mapped[str] = mapped_column("code", Text, nullable=False)
     config_revision: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -410,9 +455,20 @@ class ConfigOutboxModel(Base):
     )
 
     id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    tenant_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    agent_id: Mapped[UUID] = mapped_column(PostgresUUID(as_uuid=True), nullable=False)
-    source_id: Mapped[UUID | None] = mapped_column(PostgresUUID(as_uuid=True))
+    tenant_uuid: Mapped[UUID] = mapped_column(
+        "tenant_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    agent_uuid: Mapped[UUID] = mapped_column(
+        "agent_id",
+        PostgresUUID(as_uuid=True),
+        nullable=False,
+    )
+    source_uuid: Mapped[UUID | None] = mapped_column(
+        "source_id",
+        PostgresUUID(as_uuid=True),
+    )
     idempotency_key: Mapped[str] = mapped_column(Text, nullable=False)
     config_revision: Mapped[str] = mapped_column(Text, nullable=False)
     config_scope: Mapped[str] = mapped_column(Text, nullable=False)

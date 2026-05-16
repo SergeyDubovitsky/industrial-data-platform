@@ -154,10 +154,10 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
     name = "Tenant"
     name_plural = "Tenants"
     category = "Registry"
-    column_list = model_columns(TenantModel, "code", "name", "status", "updated_at")
+    column_list = model_columns(TenantModel, "tenant_id", "name", "status", "updated_at")
     column_details_list = all_model_columns(TenantModel)
     form_columns = [
-        "code",
+        "tenant_id",
         "name",
         "status",
     ]
@@ -228,15 +228,15 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
     category = "Registry"
     column_list = model_columns(
         AssetModel,
-        "tenant_id",
-        "code",
+        "tenant_uuid",
+        "asset_id",
         "name",
         "status",
         "updated_at",
     )
     column_details_list = all_model_columns(AssetModel)
     form_columns = [
-        "code",
+        "asset_id",
         "name",
         "description",
         "status",
@@ -347,16 +347,16 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
     category = "Registry"
     column_list = model_columns(
         AgentModel,
-        "tenant_id",
-        "asset_id",
-        "code",
+        "tenant_uuid",
+        "asset_uuid",
+        "agent_id",
         "name",
         "status",
         "updated_at",
     )
     column_details_list = all_model_columns(AgentModel)
     form_columns = [
-        "code",
+        "agent_id",
         "name",
         "status",
         "bootstrap_hint_json",
@@ -523,9 +523,9 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     category = "Registry"
     column_list = model_columns(
         SourceModel,
-        "tenant_id",
-        "agent_id",
-        "code",
+        "tenant_uuid",
+        "agent_uuid",
+        "source_id",
         "source_type",
         "enabled",
         "name",
@@ -533,7 +533,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     )
     column_details_list = all_model_columns(SourceModel)
     form_columns = [
-        "code",
+        "source_id",
         "source_type",
         "enabled",
         "name",
@@ -699,9 +699,9 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
     category = "Registry"
     column_list = model_columns(
         PointModel,
-        "tenant_id",
-        "source_id",
-        "code",
+        "tenant_uuid",
+        "source_uuid",
+        "point_id",
         "point_key",
         "name",
         "value_type",
@@ -711,7 +711,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
     )
     column_details_list = all_model_columns(PointModel)
     form_columns = [
-        "code",
+        "point_id",
         "point_key",
         "point_ref",
         "name",
@@ -884,7 +884,7 @@ def _tenant_model(tenant: Tenant) -> TenantModel:
     return _attach_public_ids(
         TenantModel(
             id=uuid4(),
-            code=tenant.tenant_id,
+            tenant_id=tenant.tenant_id,
             name=tenant.name,
             status=tenant.status.value,
             created_at=tenant.created_at,
@@ -899,8 +899,8 @@ def _asset_model(asset: Asset) -> AssetModel:
     return _attach_public_ids(
         AssetModel(
             id=uuid4(),
-            tenant_id=uuid4(),
-            code=asset.asset_id,
+            tenant_uuid=uuid4(),
+            asset_id=asset.asset_id,
             name=asset.name,
             description=asset.description,
             status=asset.status.value,
@@ -916,9 +916,9 @@ def _agent_model(agent: Agent) -> AgentModel:
     return _attach_public_ids(
         AgentModel(
             id=uuid4(),
-            tenant_id=uuid4(),
-            asset_id=uuid4(),
-            code=agent.agent_id,
+            tenant_uuid=uuid4(),
+            asset_uuid=uuid4(),
+            agent_id=agent.agent_id,
             name=agent.name,
             status=agent.status.value,
             bootstrap_hint_json=dict(agent.bootstrap_hint_json),
@@ -935,9 +935,9 @@ def _source_model(source: Source) -> SourceModel:
     return _attach_public_ids(
         SourceModel(
             id=uuid4(),
-            tenant_id=uuid4(),
-            agent_id=uuid4(),
-            code=source.source_id,
+            tenant_uuid=uuid4(),
+            agent_uuid=uuid4(),
+            source_id=source.source_id,
             source_type=source.source_type,
             enabled=source.enabled,
             name=source.name,
@@ -959,9 +959,9 @@ def _point_model(point: Point) -> PointModel:
     return _attach_public_ids(
         PointModel(
             id=uuid4(),
-            tenant_id=uuid4(),
-            source_id=uuid4(),
-            code=point.point_id,
+            tenant_uuid=uuid4(),
+            source_uuid=uuid4(),
+            point_id=point.point_id,
             point_key=point.point_key,
             point_ref=point.point_ref,
             name=point.name,
@@ -1003,7 +1003,7 @@ async def _asset_model_for_response(
     model = _asset_model(asset)
     row = await _asset_internal_ids_by_codes(request, asset.tenant_id, asset.asset_id)
     if row is not None:
-        model.id, model.tenant_id = row
+        model.id, model.tenant_uuid = row
     return model
 
 
@@ -1019,7 +1019,7 @@ async def _agent_model_for_response(
         agent.agent_id,
     )
     if row is not None:
-        model.id, model.tenant_id, model.asset_id = row
+        model.id, model.tenant_uuid, model.asset_uuid = row
     return model
 
 
@@ -1036,7 +1036,7 @@ async def _source_model_for_response(
         source.source_id,
     )
     if row is not None:
-        model.id, model.tenant_id, model.agent_id = row
+        model.id, model.tenant_uuid, model.agent_uuid = row
     return model
 
 
@@ -1047,7 +1047,7 @@ async def _point_model_for_response(
     model = _point_model(point)
     row = await _point_internal_ids_by_codes(request, point.tenant_id, point.point_id)
     if row is not None:
-        model.id, model.tenant_id, model.source_id = row
+        model.id, model.tenant_uuid, model.source_uuid = row
     return model
 
 
@@ -1272,7 +1272,7 @@ async def _tenant_public_identifier_values_by_uuid(
     factory = _require_postgres_uow_factory(request)
     async with factory.session_manager.session_factory() as session:
         tenant_code = await session.scalar(
-            select(TenantModel.code).where(TenantModel.id == pk)
+            select(TenantModel.tenant_id).where(TenantModel.id == pk)
         )
     if tenant_code is None:
         raise ValueError(f"Tenant backoffice row {pk} does not exist")
@@ -1286,9 +1286,9 @@ async def _asset_public_identifier_values_by_uuid(
     factory = _require_postgres_uow_factory(request)
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(TenantModel.code, AssetModel.code)
+            select(TenantModel.tenant_id, AssetModel.asset_id)
             .select_from(AssetModel)
-            .join(TenantModel, AssetModel.tenant_id == TenantModel.id)
+            .join(TenantModel, AssetModel.tenant_uuid == TenantModel.id)
             .where(AssetModel.id == pk)
         )
         row = result.first()
@@ -1304,10 +1304,10 @@ async def _agent_public_identifier_values_by_uuid(
     factory = _require_postgres_uow_factory(request)
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(TenantModel.code, AssetModel.code, AgentModel.code)
+            select(TenantModel.tenant_id, AssetModel.asset_id, AgentModel.agent_id)
             .select_from(AgentModel)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, AgentModel.tenant_id == TenantModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, AgentModel.tenant_uuid == TenantModel.id)
             .where(AgentModel.id == pk)
         )
         row = result.first()
@@ -1323,11 +1323,11 @@ async def _source_public_identifier_values_by_uuid(
     factory = _require_postgres_uow_factory(request)
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(TenantModel.code, AssetModel.code, AgentModel.code, SourceModel.code)
+            select(TenantModel.tenant_id, AssetModel.asset_id, AgentModel.agent_id, SourceModel.source_id)
             .select_from(SourceModel)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, SourceModel.tenant_id == TenantModel.id)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, SourceModel.tenant_uuid == TenantModel.id)
             .where(SourceModel.id == pk)
         )
         row = result.first()
@@ -1358,17 +1358,17 @@ async def _point_public_context_by_uuid(
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
             select(
-                TenantModel.code,
-                AssetModel.code,
-                AgentModel.code,
-                SourceModel.code,
-                PointModel.code,
+                TenantModel.tenant_id,
+                AssetModel.asset_id,
+                AgentModel.agent_id,
+                SourceModel.source_id,
+                PointModel.point_id,
             )
             .select_from(PointModel)
-            .join(SourceModel, PointModel.source_id == SourceModel.id)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, PointModel.tenant_id == TenantModel.id)
+            .join(SourceModel, PointModel.source_uuid == SourceModel.id)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, PointModel.tenant_uuid == TenantModel.id)
             .where(PointModel.id == pk)
         )
         row = result.first()
@@ -1383,7 +1383,7 @@ async def _tenant_uuid_by_code(request: Request, tenant_code: str) -> UUID | Non
         return None
     async with factory.session_manager.session_factory() as session:
         return await session.scalar(
-            select(TenantModel.id).where(TenantModel.code == tenant_code)
+            select(TenantModel.id).where(TenantModel.tenant_id == tenant_code)
         )
 
 
@@ -1397,9 +1397,9 @@ async def _asset_internal_ids_by_codes(
         return None
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(AssetModel.id, AssetModel.tenant_id)
-            .join(TenantModel, AssetModel.tenant_id == TenantModel.id)
-            .where(TenantModel.code == tenant_code, AssetModel.code == asset_code)
+            select(AssetModel.id, AssetModel.tenant_uuid)
+            .join(TenantModel, AssetModel.tenant_uuid == TenantModel.id)
+            .where(TenantModel.tenant_id == tenant_code, AssetModel.asset_id == asset_code)
         )
         row = result.first()
     return (row[0], row[1]) if row is not None else None
@@ -1416,13 +1416,13 @@ async def _agent_internal_ids_by_codes(
         return None
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(AgentModel.id, AgentModel.tenant_id, AgentModel.asset_id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, AgentModel.tenant_id == TenantModel.id)
+            select(AgentModel.id, AgentModel.tenant_uuid, AgentModel.asset_uuid)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, AgentModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
             )
         )
         row = result.first()
@@ -1441,15 +1441,15 @@ async def _source_internal_ids_by_codes(
         return None
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(SourceModel.id, SourceModel.tenant_id, SourceModel.agent_id)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, SourceModel.tenant_id == TenantModel.id)
+            select(SourceModel.id, SourceModel.tenant_uuid, SourceModel.agent_uuid)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, SourceModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
-                SourceModel.code == source_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
+                SourceModel.source_id == source_code,
             )
         )
         row = result.first()
@@ -1466,9 +1466,9 @@ async def _point_internal_ids_by_codes(
         return None
     async with factory.session_manager.session_factory() as session:
         result = await session.execute(
-            select(PointModel.id, PointModel.tenant_id, PointModel.source_id)
-            .join(TenantModel, PointModel.tenant_id == TenantModel.id)
-            .where(TenantModel.code == tenant_code, PointModel.code == point_code)
+            select(PointModel.id, PointModel.tenant_uuid, PointModel.source_uuid)
+            .join(TenantModel, PointModel.tenant_uuid == TenantModel.id)
+            .where(TenantModel.tenant_id == tenant_code, PointModel.point_id == point_code)
         )
         row = result.first()
     return (row[0], row[1], row[2]) if row is not None else None

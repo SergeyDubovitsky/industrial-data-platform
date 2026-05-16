@@ -40,14 +40,9 @@ from idp_config_registry.infrastructure.postgres.models import (
 )
 
 
-def _public_identifier(model: object) -> str:
-    # PostgreSQL stores public contract identifiers in each table's code column.
-    return str(getattr(model, "code"))
-
-
 def _tenant_from_model(model: TenantModel) -> Tenant:
     return Tenant(
-        tenant_id=_public_identifier(model),
+        tenant_id=model.tenant_id,
         name=model.name,
         status=TenantStatus(model.status),
         created_at=model.created_at,
@@ -57,8 +52,8 @@ def _tenant_from_model(model: TenantModel) -> Tenant:
 
 def _asset_from_row(model: AssetModel, tenant: TenantModel) -> Asset:
     return Asset(
-        tenant_id=_public_identifier(tenant),
-        asset_id=_public_identifier(model),
+        tenant_id=tenant.tenant_id,
+        asset_id=model.asset_id,
         name=model.name,
         description=model.description,
         status=AssetStatus(model.status),
@@ -73,9 +68,9 @@ def _agent_from_row(
     tenant: TenantModel,
 ) -> Agent:
     return Agent(
-        tenant_id=_public_identifier(tenant),
-        asset_id=_public_identifier(asset),
-        agent_id=_public_identifier(model),
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=model.agent_id,
         name=model.name,
         status=AgentStatus(model.status),
         bootstrap_hint_json=dict(model.bootstrap_hint_json),
@@ -91,10 +86,10 @@ def _source_from_row(
     tenant: TenantModel,
 ) -> Source:
     return Source(
-        tenant_id=_public_identifier(tenant),
-        asset_id=_public_identifier(asset),
-        agent_id=_public_identifier(agent),
-        source_id=_public_identifier(model),
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        source_id=model.source_id,
         source_type=model.source_type,
         enabled=model.enabled,
         name=model.name,
@@ -115,11 +110,11 @@ def _point_from_row(
     tenant: TenantModel,
 ) -> Point:
     return Point(
-        tenant_id=_public_identifier(tenant),
-        asset_id=_public_identifier(asset),
-        agent_id=_public_identifier(agent),
-        source_id=_public_identifier(source),
-        point_id=_public_identifier(model),
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        source_id=source.source_id,
+        point_id=model.point_id,
         point_key=model.point_key,
         point_ref=model.point_ref,
         name=model.name,
@@ -144,10 +139,10 @@ def _agent_runtime_config_revision_from_row(
     tenant: TenantModel,
 ) -> AgentRuntimeConfigRevision:
     return AgentRuntimeConfigRevision(
-        tenant_id=_public_identifier(tenant),
-        asset_id=_public_identifier(asset),
-        agent_id=_public_identifier(agent),
-        config_revision=_public_identifier(model),
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        config_revision=model.config_revision,
         status=ConfigRevisionStatus(model.status),
         issued_at=model.issued_at,
         agent_runtime_payload_json=dict(model.agent_runtime_payload_json),
@@ -163,11 +158,11 @@ def _source_config_revision_from_row(
     tenant: TenantModel,
 ) -> SourceConfigRevision:
     return SourceConfigRevision(
-        tenant_id=_public_identifier(tenant),
-        asset_id=_public_identifier(asset),
-        agent_id=_public_identifier(agent),
-        source_id=_public_identifier(source),
-        source_config_revision=_public_identifier(model),
+        tenant_id=tenant.tenant_id,
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
+        source_id=source.source_id,
+        source_config_revision=model.source_config_revision,
         config_revision=model.config_revision,
         status=ConfigRevisionStatus(model.status),
         issued_at=model.issued_at,
@@ -184,14 +179,14 @@ def _config_outbox_from_row(
     source: SourceModel | None,
 ) -> ConfigOutboxRecord:
     return ConfigOutboxRecord(
-        tenant_id=_public_identifier(tenant),
+        tenant_id=tenant.tenant_id,
         outbox_id=model.id,
         idempotency_key=model.idempotency_key,
-        asset_id=_public_identifier(asset),
-        agent_id=_public_identifier(agent),
+        asset_id=asset.asset_id,
+        agent_id=agent.agent_id,
         config_revision=model.config_revision,
         config_scope=model.config_scope,
-        source_id=_public_identifier(source) if source is not None else None,
+        source_id=source.source_id if source is not None else None,
         source_config_revision=model.source_config_revision,
         message_type=model.message_type,
         kafka_topic=model.kafka_topic,
@@ -214,7 +209,7 @@ async def _tenant_model_by_code(
     tenant_code: str,
 ) -> TenantModel | None:
     result = await session.scalars(
-        select(TenantModel).where(TenantModel.code == tenant_code)
+        select(TenantModel).where(TenantModel.tenant_id == tenant_code)
     )
     return result.first()
 
@@ -226,8 +221,8 @@ async def _asset_row_by_codes(
 ) -> tuple[AssetModel, TenantModel] | None:
     result = await session.execute(
         select(AssetModel, TenantModel)
-        .join(TenantModel, AssetModel.tenant_id == TenantModel.id)
-        .where(TenantModel.code == tenant_code, AssetModel.code == asset_code)
+        .join(TenantModel, AssetModel.tenant_uuid == TenantModel.id)
+        .where(TenantModel.tenant_id == tenant_code, AssetModel.asset_id == asset_code)
     )
     row = result.first()
     return (row[0], row[1]) if row is not None else None
@@ -241,12 +236,12 @@ async def _agent_row_by_codes(
 ) -> tuple[AgentModel, AssetModel, TenantModel] | None:
     result = await session.execute(
         select(AgentModel, AssetModel, TenantModel)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, AgentModel.tenant_id == TenantModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, AgentModel.tenant_uuid == TenantModel.id)
         .where(
-            TenantModel.code == tenant_code,
-            AssetModel.code == asset_code,
-            AgentModel.code == agent_code,
+            TenantModel.tenant_id == tenant_code,
+            AssetModel.asset_id == asset_code,
+            AgentModel.agent_id == agent_code,
         )
     )
     row = result.first()
@@ -262,14 +257,14 @@ async def _source_row_by_codes(
 ) -> tuple[SourceModel, AgentModel, AssetModel, TenantModel] | None:
     result = await session.execute(
         select(SourceModel, AgentModel, AssetModel, TenantModel)
-        .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, SourceModel.tenant_id == TenantModel.id)
+        .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, SourceModel.tenant_uuid == TenantModel.id)
         .where(
-            TenantModel.code == tenant_code,
-            AssetModel.code == asset_code,
-            AgentModel.code == agent_code,
-            SourceModel.code == source_code,
+            TenantModel.tenant_id == tenant_code,
+            AssetModel.asset_id == asset_code,
+            AgentModel.agent_id == agent_code,
+            SourceModel.source_id == source_code,
         )
     )
     row = result.first()
@@ -283,11 +278,11 @@ async def _point_row_by_code(
 ) -> tuple[PointModel, SourceModel, AgentModel, AssetModel, TenantModel] | None:
     result = await session.execute(
         select(PointModel, SourceModel, AgentModel, AssetModel, TenantModel)
-        .join(SourceModel, PointModel.source_id == SourceModel.id)
-        .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, PointModel.tenant_id == TenantModel.id)
-        .where(TenantModel.code == tenant_code, PointModel.code == point_code)
+        .join(SourceModel, PointModel.source_uuid == SourceModel.id)
+        .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, PointModel.tenant_uuid == TenantModel.id)
+        .where(TenantModel.tenant_id == tenant_code, PointModel.point_id == point_code)
     )
     row = result.first()
     return (row[0], row[1], row[2], row[3], row[4]) if row is not None else None
@@ -305,15 +300,15 @@ async def _point_row_by_source_and_field(
     field = PointModel.point_key if field_name == "point_key" else PointModel.point_ref
     result = await session.execute(
         select(PointModel, SourceModel, AgentModel, AssetModel, TenantModel)
-        .join(SourceModel, PointModel.source_id == SourceModel.id)
-        .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, PointModel.tenant_id == TenantModel.id)
+        .join(SourceModel, PointModel.source_uuid == SourceModel.id)
+        .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, PointModel.tenant_uuid == TenantModel.id)
         .where(
-            TenantModel.code == tenant_code,
-            AssetModel.code == asset_code,
-            AgentModel.code == agent_code,
-            SourceModel.code == source_code,
+            TenantModel.tenant_id == tenant_code,
+            AssetModel.asset_id == asset_code,
+            AgentModel.agent_id == agent_code,
+            SourceModel.source_id == source_code,
             field == field_value,
         )
     )
@@ -330,14 +325,14 @@ async def _agent_runtime_revision_row_by_codes(
 ) -> tuple[AgentRuntimeConfigRevisionModel, AgentModel, AssetModel, TenantModel] | None:
     result = await session.execute(
         select(AgentRuntimeConfigRevisionModel, AgentModel, AssetModel, TenantModel)
-        .join(AgentModel, AgentRuntimeConfigRevisionModel.agent_id == AgentModel.id)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, AgentRuntimeConfigRevisionModel.tenant_id == TenantModel.id)
+        .join(AgentModel, AgentRuntimeConfigRevisionModel.agent_uuid == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, AgentRuntimeConfigRevisionModel.tenant_uuid == TenantModel.id)
         .where(
-            TenantModel.code == tenant_code,
-            AssetModel.code == asset_code,
-            AgentModel.code == agent_code,
-            AgentRuntimeConfigRevisionModel.code == config_revision_code,
+            TenantModel.tenant_id == tenant_code,
+            AssetModel.asset_id == asset_code,
+            AgentModel.agent_id == agent_code,
+            AgentRuntimeConfigRevisionModel.config_revision == config_revision_code,
         )
     )
     row = result.first()
@@ -354,16 +349,16 @@ async def _source_config_revision_row_by_codes(
 ) -> tuple[SourceConfigRevisionModel, SourceModel, AgentModel, AssetModel, TenantModel] | None:
     result = await session.execute(
         select(SourceConfigRevisionModel, SourceModel, AgentModel, AssetModel, TenantModel)
-        .join(SourceModel, SourceConfigRevisionModel.source_id == SourceModel.id)
-        .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, SourceConfigRevisionModel.tenant_id == TenantModel.id)
+        .join(SourceModel, SourceConfigRevisionModel.source_uuid == SourceModel.id)
+        .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, SourceConfigRevisionModel.tenant_uuid == TenantModel.id)
         .where(
-            TenantModel.code == tenant_code,
-            AssetModel.code == asset_code,
-            AgentModel.code == agent_code,
-            SourceModel.code == source_code,
-            SourceConfigRevisionModel.code == source_config_revision_code,
+            TenantModel.tenant_id == tenant_code,
+            AssetModel.asset_id == asset_code,
+            AgentModel.agent_id == agent_code,
+            SourceModel.source_id == source_code,
+            SourceConfigRevisionModel.source_config_revision == source_config_revision_code,
         )
     )
     row = result.first()
@@ -376,10 +371,10 @@ async def _config_outbox_row_by_model(
 ) -> tuple[ConfigOutboxModel, TenantModel, AssetModel, AgentModel, SourceModel | None]:
     result = await session.execute(
         select(ConfigOutboxModel, TenantModel, AssetModel, AgentModel, SourceModel)
-        .join(AgentModel, ConfigOutboxModel.agent_id == AgentModel.id)
-        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-        .join(TenantModel, ConfigOutboxModel.tenant_id == TenantModel.id)
-        .outerjoin(SourceModel, ConfigOutboxModel.source_id == SourceModel.id)
+        .join(AgentModel, ConfigOutboxModel.agent_uuid == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+        .join(TenantModel, ConfigOutboxModel.tenant_uuid == TenantModel.id)
+        .outerjoin(SourceModel, ConfigOutboxModel.source_uuid == SourceModel.id)
         .where(ConfigOutboxModel.id == model.id)
     )
     row = result.one()
@@ -398,7 +393,7 @@ class PostgresTenantRepository:
         self.session.add(
             TenantModel(
                 id=uuid4(),
-                code=tenant.tenant_id,
+                tenant_id=tenant.tenant_id,
                 name=tenant.name,
                 status=tenant.status.value,
                 created_at=tenant.created_at,
@@ -427,7 +422,7 @@ class PostgresTenantRepository:
 
     async def list(self) -> list[Tenant]:
         result = await self.session.scalars(
-            select(TenantModel).order_by(TenantModel.code)
+            select(TenantModel).order_by(TenantModel.tenant_id)
         )
         return [_tenant_from_model(model) for model in result]
 
@@ -443,8 +438,8 @@ class PostgresAssetRepository:
         self.session.add(
             AssetModel(
                 id=uuid4(),
-                tenant_id=tenant.id,
-                code=asset.asset_id,
+                tenant_uuid=tenant.id,
+                asset_id=asset.asset_id,
                 name=asset.name,
                 description=asset.description,
                 status=asset.status.value,
@@ -478,9 +473,9 @@ class PostgresAssetRepository:
         tenant_code = tenant_id
         result = await self.session.execute(
             select(AssetModel, TenantModel)
-            .join(TenantModel, AssetModel.tenant_id == TenantModel.id)
-            .where(TenantModel.code == tenant_code)
-            .order_by(AssetModel.code)
+            .join(TenantModel, AssetModel.tenant_uuid == TenantModel.id)
+            .where(TenantModel.tenant_id == tenant_code)
+            .order_by(AssetModel.asset_id)
         )
         return [_asset_from_row(row[0], row[1]) for row in result]
 
@@ -503,9 +498,9 @@ class PostgresAgentRepository:
         self.session.add(
             AgentModel(
                 id=uuid4(),
-                tenant_id=tenant.id,
-                asset_id=asset.id,
-                code=agent.agent_id,
+                tenant_uuid=tenant.id,
+                asset_uuid=asset.id,
+                agent_id=agent.agent_id,
                 name=agent.name,
                 status=agent.status.value,
                 bootstrap_hint_json=dict(agent.bootstrap_hint_json),
@@ -545,10 +540,10 @@ class PostgresAgentRepository:
         asset_code = asset_id
         result = await self.session.execute(
             select(AgentModel, AssetModel, TenantModel)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, AgentModel.tenant_id == TenantModel.id)
-            .where(TenantModel.code == tenant_code, AssetModel.code == asset_code)
-            .order_by(AgentModel.code)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, AgentModel.tenant_uuid == TenantModel.id)
+            .where(TenantModel.tenant_id == tenant_code, AssetModel.asset_id == asset_code)
+            .order_by(AgentModel.agent_id)
         )
         return [_agent_from_row(row[0], row[1], row[2]) for row in result]
 
@@ -574,9 +569,9 @@ class PostgresSourceRepository:
         self.session.add(
             SourceModel(
                 id=uuid4(),
-                tenant_id=tenant.id,
-                agent_id=agent.id,
-                code=source.source_id,
+                tenant_uuid=tenant.id,
+                agent_uuid=agent.id,
+                source_id=source.source_id,
                 source_type=source.source_type,
                 enabled=source.enabled,
                 name=source.name,
@@ -655,7 +650,7 @@ class PostgresSourceRepository:
             return 0
         agent, _asset, _tenant = agent_row
         result = await self.session.execute(
-            delete(SourceModel).where(SourceModel.agent_id == agent.id)
+            delete(SourceModel).where(SourceModel.agent_uuid == agent.id)
         )
         await self.session.flush()
         return _rowcount(result.rowcount)
@@ -671,15 +666,15 @@ class PostgresSourceRepository:
         agent_code = agent_id
         result = await self.session.execute(
             select(SourceModel, AgentModel, AssetModel, TenantModel)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, SourceModel.tenant_id == TenantModel.id)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, SourceModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
             )
-            .order_by(SourceModel.code)
+            .order_by(SourceModel.source_id)
         )
         return [_source_from_row(row[0], row[1], row[2], row[3]) for row in result]
 
@@ -706,9 +701,9 @@ class PostgresPointRepository:
         self.session.add(
             PointModel(
                 id=uuid4(),
-                tenant_id=tenant.id,
-                source_id=source.id,
-                code=point.point_id,
+                tenant_uuid=tenant.id,
+                source_uuid=source.id,
+                point_id=point.point_id,
                 point_key=point.point_key,
                 point_ref=point.point_ref,
                 name=point.name,
@@ -766,9 +761,9 @@ class PostgresPointRepository:
         if agent_row is None:
             return 0
         agent, _asset, _tenant = agent_row
-        source_ids = select(SourceModel.id).where(SourceModel.agent_id == agent.id)
+        source_ids = select(SourceModel.id).where(SourceModel.agent_uuid == agent.id)
         result = await self.session.execute(
-            delete(PointModel).where(PointModel.source_id.in_(source_ids))
+            delete(PointModel).where(PointModel.source_uuid.in_(source_ids))
         )
         await self.session.flush()
         return _rowcount(result.rowcount)
@@ -824,15 +819,15 @@ class PostgresPointRepository:
         source_code = source_id
         result = await self.session.execute(
             select(PointModel, SourceModel, AgentModel, AssetModel, TenantModel)
-            .join(SourceModel, PointModel.source_id == SourceModel.id)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, PointModel.tenant_id == TenantModel.id)
+            .join(SourceModel, PointModel.source_uuid == SourceModel.id)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, PointModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
-                SourceModel.code == source_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
+                SourceModel.source_id == source_code,
             )
             .order_by(PointModel.point_key)
         )
@@ -860,9 +855,9 @@ class PostgresAgentRuntimeConfigRevisionRepository:
         self.session.add(
             AgentRuntimeConfigRevisionModel(
                 id=uuid4(),
-                tenant_id=tenant.id,
-                agent_id=agent.id,
-                code=revision.config_revision,
+                tenant_uuid=tenant.id,
+                agent_uuid=agent.id,
+                config_revision=revision.config_revision,
                 status=revision.status.value,
                 issued_at=revision.issued_at,
                 agent_runtime_payload_json=dict(revision.agent_runtime_payload_json),
@@ -898,7 +893,7 @@ class PostgresAgentRuntimeConfigRevisionRepository:
         agent, _asset, _tenant = agent_row
         result = await self.session.scalars(
             select(AgentRuntimeConfigRevisionModel)
-            .where(AgentRuntimeConfigRevisionModel.agent_id == agent.id)
+            .where(AgentRuntimeConfigRevisionModel.agent_uuid == agent.id)
             .limit(1)
         )
         return result.first() is not None
@@ -915,7 +910,7 @@ class PostgresAgentRuntimeConfigRevisionRepository:
         agent, _asset, _tenant = agent_row
         result = await self.session.execute(
             delete(AgentRuntimeConfigRevisionModel).where(
-                AgentRuntimeConfigRevisionModel.agent_id == agent.id
+                AgentRuntimeConfigRevisionModel.agent_uuid == agent.id
             )
         )
         await self.session.flush()
@@ -957,10 +952,10 @@ class PostgresSourceConfigRevisionRepository:
         self.session.add(
             SourceConfigRevisionModel(
                 id=uuid4(),
-                tenant_id=tenant.id,
-                source_id=source.id,
-                agent_runtime_config_revision_id=runtime.id,
-                code=revision.source_config_revision,
+                tenant_uuid=tenant.id,
+                source_uuid=source.id,
+                agent_runtime_config_revision_uuid=runtime.id,
+                source_config_revision=revision.source_config_revision,
                 config_revision=revision.config_revision,
                 status=revision.status.value,
                 issued_at=revision.issued_at,
@@ -999,17 +994,17 @@ class PostgresSourceConfigRevisionRepository:
         agent_code = agent_id
         result = await self.session.execute(
             select(SourceConfigRevisionModel, SourceModel, AgentModel, AssetModel, TenantModel)
-            .join(SourceModel, SourceConfigRevisionModel.source_id == SourceModel.id)
-            .join(AgentModel, SourceModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, SourceConfigRevisionModel.tenant_id == TenantModel.id)
+            .join(SourceModel, SourceConfigRevisionModel.source_uuid == SourceModel.id)
+            .join(AgentModel, SourceModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, SourceConfigRevisionModel.tenant_uuid == TenantModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
                 SourceConfigRevisionModel.config_revision == config_revision,
             )
-            .order_by(SourceModel.code)
+            .order_by(SourceModel.source_id)
         )
         return [
             _source_config_revision_from_row(row[0], row[1], row[2], row[3], row[4])
@@ -1035,7 +1030,7 @@ class PostgresSourceConfigRevisionRepository:
         source, _agent, _asset, _tenant = source_row
         result = await self.session.scalars(
             select(SourceConfigRevisionModel)
-            .where(SourceConfigRevisionModel.source_id == source.id)
+            .where(SourceConfigRevisionModel.source_uuid == source.id)
             .limit(1)
         )
         return result.first() is not None
@@ -1050,10 +1045,10 @@ class PostgresSourceConfigRevisionRepository:
         if agent_row is None:
             return 0
         agent, _asset, _tenant = agent_row
-        source_ids = select(SourceModel.id).where(SourceModel.agent_id == agent.id)
+        source_ids = select(SourceModel.id).where(SourceModel.agent_uuid == agent.id)
         result = await self.session.execute(
             delete(SourceConfigRevisionModel).where(
-                SourceConfigRevisionModel.source_id.in_(source_ids)
+                SourceConfigRevisionModel.source_uuid.in_(source_ids)
             )
         )
         await self.session.flush()
@@ -1097,9 +1092,9 @@ class PostgresConfigOutboxRepository:
         self.session.add(
             ConfigOutboxModel(
                 id=record.outbox_id,
-                tenant_id=tenant.id,
-                agent_id=agent.id,
-                source_id=source_uuid,
+                tenant_uuid=tenant.id,
+                agent_uuid=agent.id,
+                source_uuid=source_uuid,
                 idempotency_key=record.idempotency_key,
                 config_revision=record.config_revision,
                 config_scope=record.config_scope,
@@ -1148,14 +1143,14 @@ class PostgresConfigOutboxRepository:
         agent_code = agent_id
         result = await self.session.execute(
             select(ConfigOutboxModel, TenantModel, AssetModel, AgentModel, SourceModel)
-            .join(AgentModel, ConfigOutboxModel.agent_id == AgentModel.id)
-            .join(AssetModel, AgentModel.asset_id == AssetModel.id)
-            .join(TenantModel, ConfigOutboxModel.tenant_id == TenantModel.id)
-            .outerjoin(SourceModel, ConfigOutboxModel.source_id == SourceModel.id)
+            .join(AgentModel, ConfigOutboxModel.agent_uuid == AgentModel.id)
+            .join(AssetModel, AgentModel.asset_uuid == AssetModel.id)
+            .join(TenantModel, ConfigOutboxModel.tenant_uuid == TenantModel.id)
+            .outerjoin(SourceModel, ConfigOutboxModel.source_uuid == SourceModel.id)
             .where(
-                TenantModel.code == tenant_code,
-                AssetModel.code == asset_code,
-                AgentModel.code == agent_code,
+                TenantModel.tenant_id == tenant_code,
+                AssetModel.asset_id == asset_code,
+                AgentModel.agent_id == agent_code,
                 ConfigOutboxModel.config_revision == config_revision,
             )
             .order_by(ConfigOutboxModel.config_scope)
@@ -1177,7 +1172,7 @@ class PostgresConfigOutboxRepository:
         agent, _asset, _tenant = agent_row
         result = await self.session.scalars(
             select(ConfigOutboxModel)
-            .where(ConfigOutboxModel.agent_id == agent.id)
+            .where(ConfigOutboxModel.agent_uuid == agent.id)
             .limit(1)
         )
         return result.first() is not None
@@ -1201,7 +1196,7 @@ class PostgresConfigOutboxRepository:
         source, _agent, _asset, _tenant = source_row
         result = await self.session.scalars(
             select(ConfigOutboxModel)
-            .where(ConfigOutboxModel.source_id == source.id)
+            .where(ConfigOutboxModel.source_uuid == source.id)
             .limit(1)
         )
         return result.first() is not None
@@ -1217,7 +1212,7 @@ class PostgresConfigOutboxRepository:
             return 0
         agent, _asset, _tenant = agent_row
         result = await self.session.execute(
-            delete(ConfigOutboxModel).where(ConfigOutboxModel.agent_id == agent.id)
+            delete(ConfigOutboxModel).where(ConfigOutboxModel.agent_uuid == agent.id)
         )
         await self.session.flush()
         return _rowcount(result.rowcount)
