@@ -80,16 +80,16 @@ from idp_config_registry.settings import ConfigRegistrySettings
 CONFIG_REGISTRY_SRC = Path(__file__).resolve().parents[1] / "src" / "idp_config_registry"
 
 LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...] = (
-    (TenantBackofficeView, TenantModel, ("tenant_code", "name", "status", "updated_at")),
+    (TenantBackofficeView, TenantModel, ("code", "name", "status", "updated_at")),
     (
         AssetBackofficeView,
         AssetModel,
-        ("tenant_id", "asset_code", "name", "status", "updated_at"),
+        ("tenant_id", "code", "name", "status", "updated_at"),
     ),
     (
         AgentBackofficeView,
         AgentModel,
-        ("tenant_id", "asset_id", "agent_code", "name", "status", "updated_at"),
+        ("tenant_id", "asset_id", "code", "name", "status", "updated_at"),
     ),
     (
         SourceBackofficeView,
@@ -97,7 +97,7 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
         (
             "tenant_id",
             "agent_id",
-            "source_code",
+            "code",
             "source_type",
             "enabled",
             "name",
@@ -110,7 +110,7 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
         (
             "tenant_id",
             "source_id",
-            "point_code",
+            "code",
             "point_key",
             "name",
             "value_type",
@@ -251,7 +251,7 @@ def test_backoffice_tenant_create_form_hides_system_fields() -> None:
         response = client.get("/backoffice/tenant-model/create")
 
     assert response.status_code == 200
-    assert 'name="tenant_code"' in response.text
+    assert 'name="code"' in response.text
     assert 'name="name"' in response.text
     assert 'name="status"' not in response.text
     assert 'name="created_at"' not in response.text
@@ -270,7 +270,7 @@ async def test_backoffice_asset_create_form_uses_tenant_selector() -> None:
     assert response.status_code == 200
     assert f'name="{TENANT_SELECTOR_FIELD}"' in response.text
     assert 'name="tenant_id"' not in response.text
-    assert 'name="asset_code"' in response.text
+    assert 'name="code"' in response.text
     assert "Tenant Backoffice (tenant-backoffice)" in response.text
 
 
@@ -287,7 +287,7 @@ async def test_backoffice_agent_create_form_uses_asset_selector() -> None:
     assert f'name="{ASSET_SELECTOR_FIELD}"' in response.text
     assert 'name="tenant_id"' not in response.text
     assert 'name="asset_id"' not in response.text
-    assert 'name="agent_code"' in response.text
+    assert 'name="code"' in response.text
     assert (
         "Tenant Backoffice (tenant-backoffice) / Asset Backoffice (asset-backoffice)"
     ) in response.text
@@ -307,7 +307,7 @@ async def test_backoffice_source_create_form_uses_agent_selector() -> None:
     assert 'name="tenant_id"' not in response.text
     assert 'name="asset_id"' not in response.text
     assert 'name="agent_id"' not in response.text
-    assert 'name="source_code"' in response.text
+    assert 'name="code"' in response.text
     assert 'name="connection_json"' not in response.text
 
 
@@ -326,7 +326,7 @@ async def test_backoffice_point_create_form_uses_source_selector() -> None:
     assert 'name="asset_id"' not in response.text
     assert 'name="agent_id"' not in response.text
     assert 'name="source_id"' not in response.text
-    assert 'name="point_code"' in response.text
+    assert 'name="code"' in response.text
     assert 'name="acquisition_json"' not in response.text
 
 
@@ -425,7 +425,7 @@ def test_backoffice_can_create_tenant_via_mounted_form() -> None:
         response = client.post(
             "/backoffice/tenant-model/create",
             data={
-                "tenant_code": "tenant-ui",
+                "code": "tenant-ui",
                 "name": "Tenant UI",
                 "save": "Save",
             },
@@ -448,7 +448,7 @@ async def test_backoffice_can_create_asset_via_mounted_form() -> None:
             "/backoffice/asset-model/create",
             data={
                 TENANT_SELECTOR_FIELD: "tenant-backoffice",
-                "asset_code": "asset-ui",
+                "code": "asset-ui",
                 "name": "Asset UI",
                 "description": "Created from mounted backoffice form",
                 "save": "Save",
@@ -477,7 +477,7 @@ async def test_backoffice_can_create_agent_via_mounted_form() -> None:
                         asset_code="asset-backoffice",
                     )
                 ),
-                "agent_code": "agent-ui",
+                "code": "agent-ui",
                 "name": "Agent UI",
                 "save": "Save",
             },
@@ -508,7 +508,7 @@ async def test_backoffice_can_create_source_via_mounted_form() -> None:
                         agent_code="agent-backoffice",
                     )
                 ),
-                "source_code": "source-ui",
+                "code": "source-ui",
                 "source_type": "knx",
                 "enabled": "y",
                 "name": "Source UI",
@@ -544,7 +544,7 @@ async def test_backoffice_can_create_point_via_mounted_form() -> None:
                         source_code="source-backoffice",
                     )
                 ),
-                "point_code": "point-ui",
+                "code": "point-ui",
                 "point_key": "2%2F3%2F4",
                 "point_ref": "2/3/4",
                 "name": "Point UI",

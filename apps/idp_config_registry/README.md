@@ -29,8 +29,8 @@ stable identifiers: `idp_config_registry`, `idp-config-registry`,
   `idp.edge.configs.v1 -> MQTT retained agent runtime/source config topics`
 - временный in-memory adapter для unit/API smoke-тестов
 - PostgreSQL adapter для `tenants`, `assets`, `agents`, `sources` и `points`
-  с internal `uuid` primary keys / foreign keys и public code колонками
-  `tenant_code`, `asset_code`, `agent_code`, `source_code`, `point_code`
+  с internal `uuid` primary keys / foreign keys и per-table public `code`
+  колонкой
 - local Docker image для `idp-config-registry` и
   `idp-config-registry-outbox-worker`
 - fresh Alembic baseline migration для registry tables:
@@ -76,11 +76,14 @@ Registry tables use internal `id uuid primary key` values and UUID foreign keys.
 Public identifiers from the API/contracts (`tenant_id`, `asset_id`, `agent_id`,
 `source_id`, `point_id`) stay unchanged on HTTP/Kafka/MQTT surfaces, while the
 Config Registry domain/application layer treats them as public codes and the
-PostgreSQL registry tables store them in entity-specific `*_code` columns. UUID
-foreign keys keep the conventional `*_id` names and point at internal `id`
-primary keys. Rendered config revisions and `config_outbox` keep denormalized
-`tenant_code`, `asset_code`, `agent_code` and `source_code` snapshots so
-replay/history does not reconstruct public ids from current registry joins.
+PostgreSQL registry tables store them in a conventional per-table `code`
+column. UUID foreign keys keep the conventional `*_id` names and point at
+internal `id` primary keys. Domain/application objects keep explicit
+`tenant_code`, `asset_code`, `agent_code`, `source_code` and `point_code` names
+where the entity context is not implicit. Denormalized rendered config
+revisions / `config_outbox` snapshots keep `tenant_code`, `asset_code`,
+`agent_code` and `source_code` snapshots, so replay/history does not reconstruct
+public ids from current registry joins.
 
 Для запуска API с PostgreSQL задайте `CONFIG_REGISTRY_DATABASE_URL`, например:
 
@@ -96,14 +99,14 @@ CONFIG_REGISTRY_DATABASE_URL=postgresql+asyncpg://idp:change-me-local-postgres@l
 лишнего горизонтального скролла. Для create-flow используется операторский UX
 поверх application use cases:
 
-- `tenants`: только `tenant_code` (`tenant_id` в API) и `name`
-- `assets`: `Tenant` selector + `asset_code` (`asset_id` в API), `name`,
+- `tenants`: только `code` (`tenant_id` в API) и `name`
+- `assets`: `Tenant` selector + `code` (`asset_id` в API), `name`,
   `description`
-- `agents`: `Asset` selector + `agent_code` (`agent_id` в API), `name`
-- `sources`: `Agent` selector + `source_code` (`source_id` в API),
+- `agents`: `Asset` selector + `code` (`agent_id` в API), `name`
+- `sources`: `Agent` selector + `code` (`source_id` в API),
   `source_type`, `enabled`, `name`,
   `description`
-- `points`: `Source` selector + `point_code` (`point_id` в API) +
+- `points`: `Source` selector + `code` (`point_id` в API) +
   business-поля точки
 - `agent_runtime_config_revisions`: `Agent` selector + revision payload
 - `source_config_revisions`: `Source` selector + revision payload

@@ -43,7 +43,7 @@ from idp_config_registry.infrastructure.postgres.models import (
 def _tenant_to_model(tenant: Tenant) -> TenantModel:
     return TenantModel(
         id=uuid4(),
-        tenant_code=tenant.tenant_code,
+        code=tenant.tenant_code,
         name=tenant.name,
         status=tenant.status.value,
         created_at=tenant.created_at,
@@ -53,7 +53,7 @@ def _tenant_to_model(tenant: Tenant) -> TenantModel:
 
 def _tenant_from_model(model: TenantModel) -> Tenant:
     return Tenant(
-        tenant_code=model.tenant_code,
+        tenant_code=model.code,
         name=model.name,
         status=TenantStatus(model.status),
         created_at=model.created_at,
@@ -68,7 +68,7 @@ def _asset_from_model(
 ) -> Asset:
     return Asset(
         tenant_code=tenant_code,
-        asset_code=model.asset_code,
+        asset_code=model.code,
         name=model.name,
         description=model.description,
         status=AssetStatus(model.status),
@@ -86,7 +86,7 @@ def _agent_from_model(
     return Agent(
         tenant_code=tenant_code,
         asset_code=asset_code,
-        agent_code=model.agent_code,
+        agent_code=model.code,
         name=model.name,
         status=AgentStatus(model.status),
         bootstrap_hint_json=dict(model.bootstrap_hint_json),
@@ -106,7 +106,7 @@ def _source_from_model(
         tenant_code=tenant_code,
         asset_code=asset_code,
         agent_code=agent_code,
-        source_code=model.source_code,
+        source_code=model.code,
         source_type=model.source_type,
         enabled=model.enabled,
         name=model.name,
@@ -132,7 +132,7 @@ def _point_from_model(
         asset_code=asset_code,
         agent_code=agent_code,
         source_code=source_code,
-        point_code=model.point_code,
+        point_code=model.code,
         point_key=model.point_key,
         point_ref=model.point_ref,
         name=model.name,
@@ -218,7 +218,7 @@ async def _tenant_model_by_code(
     tenant_code: str,
 ) -> TenantModel | None:
     result = await session.scalars(
-        select(TenantModel).where(TenantModel.tenant_code == tenant_code)
+        select(TenantModel).where(TenantModel.code == tenant_code)
     )
     return result.first()
 
@@ -232,8 +232,8 @@ async def _asset_context(
         select(TenantModel, AssetModel)
         .join(AssetModel, AssetModel.tenant_id == TenantModel.id)
         .where(
-            TenantModel.tenant_code == tenant_code,
-            AssetModel.asset_code == asset_code,
+            TenantModel.code == tenant_code,
+            AssetModel.code == asset_code,
         )
     )
     return result.first()
@@ -250,9 +250,9 @@ async def _agent_context(
         .join(AssetModel, AssetModel.tenant_id == TenantModel.id)
         .join(AgentModel, AgentModel.asset_id == AssetModel.id)
         .where(
-            TenantModel.tenant_code == tenant_code,
-            AssetModel.asset_code == asset_code,
-            AgentModel.agent_code == agent_code,
+            TenantModel.code == tenant_code,
+            AssetModel.code == asset_code,
+            AgentModel.code == agent_code,
         )
     )
     return result.first()
@@ -271,10 +271,10 @@ async def _source_context(
         .join(AgentModel, AgentModel.asset_id == AssetModel.id)
         .join(SourceModel, SourceModel.agent_id == AgentModel.id)
         .where(
-            TenantModel.tenant_code == tenant_code,
-            AssetModel.asset_code == asset_code,
-            AgentModel.agent_code == agent_code,
-            SourceModel.source_code == source_code,
+            TenantModel.code == tenant_code,
+            AssetModel.code == asset_code,
+            AgentModel.code == agent_code,
+            SourceModel.code == source_code,
         )
     )
     return result.first()
@@ -292,8 +292,8 @@ async def _point_context_by_code(
         .join(SourceModel, SourceModel.agent_id == AgentModel.id)
         .join(PointModel, PointModel.source_id == SourceModel.id)
         .where(
-            TenantModel.tenant_code == tenant_code,
-            PointModel.point_code == point_code,
+            TenantModel.code == tenant_code,
+            PointModel.code == point_code,
         )
     )
     return result.first()
@@ -310,10 +310,10 @@ async def _point_context_by_source_scope(
     point_ref: str | None = None,
 ) -> tuple[TenantModel, AssetModel, AgentModel, SourceModel, PointModel] | None:
     criteria = [
-        TenantModel.tenant_code == tenant_code,
-        AssetModel.asset_code == asset_code,
-        AgentModel.agent_code == agent_code,
-        SourceModel.source_code == source_code,
+        TenantModel.code == tenant_code,
+        AssetModel.code == asset_code,
+        AgentModel.code == agent_code,
+        SourceModel.code == source_code,
     ]
     if point_key is not None:
         criteria.append(PointModel.point_key == point_key)
@@ -375,7 +375,7 @@ class PostgresTenantRepository:
 
     async def list(self) -> list[Tenant]:
         result = await self.session.scalars(
-            select(TenantModel).order_by(TenantModel.tenant_code)
+            select(TenantModel).order_by(TenantModel.code)
         )
         return [_tenant_from_model(model) for model in result]
 
@@ -392,7 +392,7 @@ class PostgresAssetRepository:
             AssetModel(
                 id=uuid4(),
                 tenant_id=tenant_model.id,
-                asset_code=asset.asset_code,
+                code=asset.asset_code,
                 name=asset.name,
                 description=asset.description,
                 status=asset.status.value,
@@ -436,7 +436,7 @@ class PostgresAssetRepository:
         result = await self.session.scalars(
             select(AssetModel)
             .where(AssetModel.tenant_id == tenant_model.id)
-            .order_by(AssetModel.asset_code)
+            .order_by(AssetModel.code)
         )
         return [
             _asset_from_model(model, tenant_code=tenant_code)
@@ -462,7 +462,7 @@ class PostgresAgentRepository:
                 id=uuid4(),
                 tenant_id=tenant_model.id,
                 asset_id=asset_model.id,
-                agent_code=agent.agent_code,
+                code=agent.agent_code,
                 name=agent.name,
                 status=agent.status.value,
                 bootstrap_hint_json=dict(agent.bootstrap_hint_json),
@@ -536,7 +536,7 @@ class PostgresAgentRepository:
         result = await self.session.scalars(
             select(AgentModel)
             .where(AgentModel.asset_id == asset_model.id)
-            .order_by(AgentModel.agent_code)
+            .order_by(AgentModel.code)
         )
         return [
             _agent_from_model(
@@ -567,7 +567,7 @@ class PostgresSourceRepository:
                 id=uuid4(),
                 tenant_id=tenant_model.id,
                 agent_id=agent_model.id,
-                source_code=source.source_code,
+                code=source.source_code,
                 source_type=source.source_type,
                 enabled=source.enabled,
                 name=source.name,
@@ -682,7 +682,7 @@ class PostgresSourceRepository:
         result = await self.session.scalars(
             select(SourceModel)
             .where(SourceModel.agent_id == agent_model.id)
-            .order_by(SourceModel.source_code)
+            .order_by(SourceModel.code)
         )
         return [
             _source_from_model(
@@ -715,7 +715,7 @@ class PostgresPointRepository:
                 id=uuid4(),
                 tenant_id=tenant_model.id,
                 source_id=source_model.id,
-                point_code=point.point_code,
+                code=point.point_code,
                 point_key=point.point_key,
                 point_ref=point.point_ref,
                 name=point.name,
@@ -741,9 +741,9 @@ class PostgresPointRepository:
         return _point_from_model(
             model,
             tenant_code=tenant_code,
-            asset_code=asset_model.asset_code,
-            agent_code=agent_model.agent_code,
-            source_code=source_model.source_code,
+            asset_code=asset_model.code,
+            agent_code=agent_model.code,
+            source_code=source_model.code,
         )
 
     async def update(self, point: Point) -> None:

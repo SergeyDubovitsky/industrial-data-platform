@@ -67,7 +67,7 @@ async def test_config_registry_postgres_schema_uses_internal_uuid_keys(
     finally:
         await engine.dispose()
 
-    expected_code_columns = {
+    disallowed_public_code_columns = {
         "tenants": "tenant_code",
         "assets": "asset_code",
         "agents": "agent_code",
@@ -78,8 +78,8 @@ async def test_config_registry_postgres_schema_uses_internal_uuid_keys(
     for table, table_columns in columns.items():
         assert table_columns["id"] == "uuid"
         assert primary_keys[table] == ("id",)
-        assert table_columns[expected_code_columns[table]] == "text"
-        assert "code" not in table_columns
+        assert table_columns["code"] == "text"
+        assert disallowed_public_code_columns[table] not in table_columns
 
     assert "tenant_id" not in columns["tenants"]
     assert "asset_id" not in columns["assets"]

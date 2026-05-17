@@ -29,11 +29,11 @@ class Base(DeclarativeBase):
 class TenantModel(Base):
     __tablename__ = "tenants"
     __table_args__ = (
-        UniqueConstraint("tenant_code", name="uq_tenants_tenant_code"),
+        UniqueConstraint("code", name="uq_tenants_code"),
         CheckConstraint("status in ('active', 'disabled')", name="ck_tenants_status"),
         CheckConstraint(
-            f"tenant_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_tenants_tenant_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_tenants_code_path_id",
         ),
     )
 
@@ -42,7 +42,7 @@ class TenantModel(Base):
         primary_key=True,
         default=uuid4,
     )
-    tenant_code: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -58,11 +58,11 @@ class TenantModel(Base):
 class AssetModel(Base):
     __tablename__ = "assets"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "asset_code", name="uq_assets_tenant_asset_code"),
+        UniqueConstraint("tenant_id", "code", name="uq_assets_tenant_code"),
         CheckConstraint("status in ('active', 'disabled')", name="ck_assets_status"),
         CheckConstraint(
-            f"asset_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_assets_asset_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_assets_code_path_id",
         ),
         Index("ix_assets_tenant_status", "tenant_id", "status"),
     )
@@ -77,7 +77,7 @@ class AssetModel(Base):
         ForeignKey("tenants.id", name="fk_assets_tenant"),
         nullable=False,
     )
-    asset_code: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, nullable=False)
@@ -94,16 +94,16 @@ class AssetModel(Base):
 class AgentModel(Base):
     __tablename__ = "agents"
     __table_args__ = (
-        UniqueConstraint("asset_id", "agent_code", name="uq_agents_asset_agent_code"),
+        UniqueConstraint("asset_id", "code", name="uq_agents_asset_code"),
         CheckConstraint(
             "status in ('active', 'disabled', 'retired')",
             name="ck_agents_status",
         ),
         CheckConstraint(
-            f"agent_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_agents_agent_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_agents_code_path_id",
         ),
-        Index("ix_agents_tenant_agent_code", "tenant_id", "agent_code"),
+        Index("ix_agents_tenant_code", "tenant_id", "code"),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -121,7 +121,7 @@ class AgentModel(Base):
         ForeignKey("assets.id", name="fk_agents_asset"),
         nullable=False,
     )
-    agent_code: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str | None] = mapped_column(Text)
     status: Mapped[str] = mapped_column(Text, nullable=False)
     bootstrap_hint_json: Mapped[dict[str, Any]] = mapped_column(
@@ -142,10 +142,10 @@ class AgentModel(Base):
 class SourceModel(Base):
     __tablename__ = "sources"
     __table_args__ = (
-        UniqueConstraint("agent_id", "source_code", name="uq_sources_agent_source_code"),
+        UniqueConstraint("agent_id", "code", name="uq_sources_agent_code"),
         CheckConstraint(
-            f"source_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_sources_source_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_sources_code_path_id",
         ),
         Index("ix_sources_tenant_type", "tenant_id", "source_type"),
     )
@@ -165,7 +165,7 @@ class SourceModel(Base):
         ForeignKey("agents.id", name="fk_sources_agent"),
         nullable=False,
     )
-    source_code: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
     source_type: Mapped[str] = mapped_column(Text, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     name: Mapped[str | None] = mapped_column(Text)
@@ -198,7 +198,7 @@ class SourceModel(Base):
 class PointModel(Base):
     __tablename__ = "points"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "point_code", name="uq_points_tenant_point_code"),
+        UniqueConstraint("tenant_id", "code", name="uq_points_tenant_code"),
         UniqueConstraint("source_id", "point_key", name="uq_points_source_point_key"),
         UniqueConstraint("source_id", "point_ref", name="uq_points_source_point_ref"),
         CheckConstraint(
@@ -231,7 +231,7 @@ class PointModel(Base):
         ForeignKey("sources.id", name="fk_points_source"),
         nullable=False,
     )
-    point_code: Mapped[str] = mapped_column(Text, nullable=False)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
     point_key: Mapped[str] = mapped_column(String(512), nullable=False)
     point_ref: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)

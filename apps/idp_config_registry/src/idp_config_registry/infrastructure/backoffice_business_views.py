@@ -137,15 +137,15 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
     name = "Tenant"
     name_plural = "Tenants"
     category = "Registry"
-    column_list = model_columns(TenantModel, "tenant_code", "name", "status", "updated_at")
+    column_list = model_columns(TenantModel, "code", "name", "status", "updated_at")
     column_details_list = all_model_columns(TenantModel)
     form_columns = [
-        "tenant_code",
+        "code",
         "name",
         "status",
     ]
     form_create_rules = [
-        "tenant_code",
+        "code",
         "name",
     ]
     form_edit_rules = [
@@ -156,7 +156,7 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
     async def insert_model(self, request: Request, data: dict[str, object]) -> object:
         tenant = await CreateTenant(get_request_state(request).unit_of_work_factory()).execute(
             CreateTenantCommand(
-                tenant_code=str(data["tenant_code"]),
+                tenant_code=str(data["code"]),
                 name=str(data["name"]),
             )
         )
@@ -195,21 +195,21 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
     column_list = model_columns(
         AssetModel,
         "tenant_id",
-        "asset_code",
+        "code",
         "name",
         "status",
         "updated_at",
     )
     column_details_list = all_model_columns(AssetModel)
     form_columns = [
-        "asset_code",
+        "code",
         "name",
         "description",
         "status",
     ]
     form_create_rules = [
         TENANT_SELECTOR_FIELD,
-        "asset_code",
+        "code",
         "name",
         "description",
     ]
@@ -255,7 +255,7 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
         asset = await CreateAsset(get_request_state(request).unit_of_work_factory()).execute(
             CreateAssetCommand(
                 tenant_code=str(data[TENANT_SELECTOR_FIELD]),
-                asset_code=str(data["asset_code"]),
+                asset_code=str(data["code"]),
                 name=str(data["name"]),
                 description=optional_string(data.get("description")),
             )
@@ -304,21 +304,21 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         AgentModel,
         "tenant_id",
         "asset_id",
-        "agent_code",
+        "code",
         "name",
         "status",
         "updated_at",
     )
     column_details_list = all_model_columns(AgentModel)
     form_columns = [
-        "agent_code",
+        "code",
         "name",
         "status",
         "bootstrap_hint_json",
     ]
     form_create_rules = [
         ASSET_SELECTOR_FIELD,
-        "agent_code",
+        "code",
         "name",
     ]
     form_edit_rules = [
@@ -403,7 +403,7 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
             CreateAgentCommand(
                 tenant_code=asset_selection.tenant_code,
                 asset_code=asset_selection.asset_code,
-                agent_code=str(data["agent_code"]),
+                agent_code=str(data["code"]),
                 name=optional_string(data.get("name")),
             )
         )
@@ -460,7 +460,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
         SourceModel,
         "tenant_id",
         "agent_id",
-        "source_code",
+        "code",
         "source_type",
         "enabled",
         "name",
@@ -468,7 +468,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     )
     column_details_list = all_model_columns(SourceModel)
     form_columns = [
-        "source_code",
+        "code",
         "source_type",
         "enabled",
         "name",
@@ -479,7 +479,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     ]
     form_create_rules = [
         AGENT_SELECTOR_FIELD,
-        "source_code",
+        "code",
         "source_type",
         "enabled",
         "name",
@@ -534,7 +534,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
                 tenant_code=agent_selection.tenant_code,
                 asset_code=agent_selection.asset_code,
                 agent_code=agent_selection.agent_code,
-                source_code=str(data["source_code"]),
+                source_code=str(data["code"]),
                 source_type=str(data["source_type"]),
                 enabled=optional_bool(data.get("enabled"), default=True),
                 name=optional_string(data.get("name")),
@@ -609,7 +609,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         PointModel,
         "tenant_id",
         "source_id",
-        "point_code",
+        "code",
         "point_key",
         "name",
         "value_type",
@@ -619,7 +619,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
     )
     column_details_list = all_model_columns(PointModel)
     form_columns = [
-        "point_code",
+        "code",
         "point_key",
         "point_ref",
         "name",
@@ -635,7 +635,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
     ]
     form_create_rules = [
         SOURCE_SELECTOR_FIELD,
-        "point_code",
+        "code",
         "point_key",
         "point_ref",
         "name",
@@ -708,7 +708,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
                 asset_code=source_selection.asset_code,
                 agent_code=source_selection.agent_code,
                 source_code=source_selection.source_code,
-                point_code=str(data["point_code"]),
+                point_code=str(data["code"]),
                 point_key=str(data["point_key"]),
                 point_ref=str(data["point_ref"]),
                 name=str(data["name"]),
@@ -780,7 +780,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
 def _tenant_model(tenant: Tenant) -> TenantModel:
     return TenantModel(
         id=uuid4(),
-        tenant_code=tenant.tenant_code,
+        code=tenant.tenant_code,
         name=tenant.name,
         status=tenant.status.value,
         created_at=tenant.created_at,
@@ -792,7 +792,7 @@ def _asset_model(asset: Asset) -> AssetModel:
     model = AssetModel(
         id=uuid4(),
         tenant_id=uuid4(),
-        asset_code=asset.asset_code,
+        code=asset.asset_code,
         name=asset.name,
         description=asset.description,
         status=asset.status.value,
@@ -809,7 +809,7 @@ def _agent_model(agent: Agent) -> AgentModel:
         id=uuid4(),
         tenant_id=uuid4(),
         asset_id=uuid4(),
-        agent_code=agent.agent_code,
+        code=agent.agent_code,
         name=agent.name,
         status=agent.status.value,
         bootstrap_hint_json=dict(agent.bootstrap_hint_json),
@@ -827,7 +827,7 @@ def _source_model(source: Source) -> SourceModel:
         id=uuid4(),
         tenant_id=uuid4(),
         agent_id=uuid4(),
-        source_code=source.source_code,
+        code=source.source_code,
         source_type=source.source_type,
         enabled=source.enabled,
         name=source.name,
@@ -850,7 +850,7 @@ def _point_model(point: Point) -> PointModel:
         id=uuid4(),
         tenant_id=uuid4(),
         source_id=uuid4(),
-        point_code=point.point_code,
+        code=point.point_code,
         point_key=point.point_key,
         point_ref=point.point_ref,
         name=point.name,

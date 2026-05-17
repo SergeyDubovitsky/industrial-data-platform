@@ -25,36 +25,36 @@ def upgrade() -> None:
     op.create_table(
         "tenants",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("tenant_code", sa.Text(), nullable=False),
+        sa.Column("code", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("status", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint(
-            f"tenant_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_tenants_tenant_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_tenants_code_path_id",
         ),
         sa.CheckConstraint(
             "status in ('active', 'disabled')",
             name="ck_tenants_status",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("tenant_code", name="uq_tenants_tenant_code"),
+        sa.UniqueConstraint("code", name="uq_tenants_code"),
     )
 
     op.create_table(
         "assets",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("asset_code", sa.Text(), nullable=False),
+        sa.Column("code", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("description", sa.Text(), nullable=True),
         sa.Column("status", sa.Text(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint(
-            f"asset_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_assets_asset_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_assets_code_path_id",
         ),
         sa.CheckConstraint(
             "status in ('active', 'disabled')",
@@ -66,11 +66,7 @@ def upgrade() -> None:
             name="fk_assets_tenant",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "tenant_id",
-            "asset_code",
-            name="uq_assets_tenant_asset_code",
-        ),
+        sa.UniqueConstraint("tenant_id", "code", name="uq_assets_tenant_code"),
     )
     op.create_index(
         "ix_assets_tenant_status",
@@ -83,7 +79,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("asset_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("agent_code", sa.Text(), nullable=False),
+        sa.Column("code", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=True),
         sa.Column("status", sa.Text(), nullable=False),
         sa.Column(
@@ -95,8 +91,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint(
-            f"agent_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_agents_agent_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_agents_code_path_id",
         ),
         sa.CheckConstraint(
             "status in ('active', 'disabled', 'retired')",
@@ -113,16 +109,12 @@ def upgrade() -> None:
             name="fk_agents_tenant",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "asset_id",
-            "agent_code",
-            name="uq_agents_asset_agent_code",
-        ),
+        sa.UniqueConstraint("asset_id", "code", name="uq_agents_asset_code"),
     )
     op.create_index(
-        "ix_agents_tenant_agent_code",
+        "ix_agents_tenant_code",
         "agents",
-        ["tenant_id", "agent_code"],
+        ["tenant_id", "code"],
     )
 
     op.create_table(
@@ -130,7 +122,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("agent_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("source_code", sa.Text(), nullable=False),
+        sa.Column("code", sa.Text(), nullable=False),
         sa.Column("source_type", sa.Text(), nullable=False),
         sa.Column(
             "enabled",
@@ -161,8 +153,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint(
-            f"source_code ~ '{PATH_CODE_PATTERN}'",
-            name="ck_sources_source_code_path_id",
+            f"code ~ '{PATH_CODE_PATTERN}'",
+            name="ck_sources_code_path_id",
         ),
         sa.ForeignKeyConstraint(
             ["agent_id"],
@@ -175,11 +167,7 @@ def upgrade() -> None:
             name="fk_sources_tenant",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "agent_id",
-            "source_code",
-            name="uq_sources_agent_source_code",
-        ),
+        sa.UniqueConstraint("agent_id", "code", name="uq_sources_agent_code"),
     )
     op.create_index(
         "ix_sources_tenant_type",
@@ -192,7 +180,7 @@ def upgrade() -> None:
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("tenant_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("source_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("point_code", sa.Text(), nullable=False),
+        sa.Column("code", sa.Text(), nullable=False),
         sa.Column("point_key", sa.String(length=512), nullable=False),
         sa.Column("point_ref", sa.Text(), nullable=False),
         sa.Column("name", sa.Text(), nullable=False),
@@ -250,11 +238,7 @@ def upgrade() -> None:
             name="fk_points_tenant",
         ),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint(
-            "tenant_id",
-            "point_code",
-            name="uq_points_tenant_point_code",
-        ),
+        sa.UniqueConstraint("tenant_id", "code", name="uq_points_tenant_code"),
         sa.UniqueConstraint("source_id", "point_key", name="uq_points_source_point_key"),
         sa.UniqueConstraint("source_id", "point_ref", name="uq_points_source_point_ref"),
     )
@@ -499,7 +483,7 @@ def downgrade() -> None:
     op.drop_table("points")
     op.drop_index("ix_sources_tenant_type", table_name="sources")
     op.drop_table("sources")
-    op.drop_index("ix_agents_tenant_agent_code", table_name="agents")
+    op.drop_index("ix_agents_tenant_code", table_name="agents")
     op.drop_table("agents")
     op.drop_index("ix_assets_tenant_status", table_name="assets")
     op.drop_table("assets")
