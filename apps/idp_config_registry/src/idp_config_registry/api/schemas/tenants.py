@@ -12,6 +12,10 @@ class TenantCreateRequest(BaseModel):
     tenant_id: str = Field(min_length=1)
     name: str = Field(min_length=1)
 
+    @property
+    def tenant_code(self) -> str:
+        return self.tenant_id
+
 
 class TenantResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)

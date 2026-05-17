@@ -18,6 +18,10 @@ class SourceCreateRequest(BaseModel):
     acquisition_defaults_json: dict[str, Any] = Field(default_factory=dict)
     publish_defaults_json: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def source_code(self) -> str:
+        return self.source_id
+
 
 class SourceResponse(BaseModel):
     tenant_id: str

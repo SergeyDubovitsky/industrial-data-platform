@@ -6,6 +6,11 @@ from idp_config_registry.api.dependencies import (
     UnitOfWorkFactory,
     get_unit_of_work_factory,
 )
+from idp_config_registry.api.path_params import (
+    AgentCodePath,
+    AssetCodePath,
+    TenantCodePath,
+)
 from idp_config_registry.api.schemas.sources import SourceCreateRequest, SourceResponse
 from idp_config_registry.application.errors import (
     AgentNotFoundError,
@@ -30,19 +35,19 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_source(
-    tenant_id: str,
-    asset_id: str,
-    agent_id: str,
+    tenant_code: TenantCodePath,
+    asset_code: AssetCodePath,
+    agent_code: AgentCodePath,
     request: SourceCreateRequest,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> SourceResponse:
     try:
         source = await CreateSource(unit_of_work_factory()).execute(
             CreateSourceCommand(
-                tenant_code=tenant_id,
-                asset_code=asset_id,
-                agent_code=agent_id,
-                source_code=request.source_id,
+                tenant_code=tenant_code,
+                asset_code=asset_code,
+                agent_code=agent_code,
+                source_code=request.source_code,
                 source_type=request.source_type,
                 enabled=request.enabled,
                 name=request.name,
@@ -73,16 +78,16 @@ async def create_source(
 
 @router.get("", response_model=list[SourceResponse])
 async def list_sources(
-    tenant_id: str,
-    asset_id: str,
-    agent_id: str,
+    tenant_code: TenantCodePath,
+    asset_code: AssetCodePath,
+    agent_code: AgentCodePath,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> list[SourceResponse]:
     try:
         sources = await ListSources(unit_of_work_factory()).execute(
-            tenant_id,
-            asset_id,
-            agent_id,
+            tenant_code,
+            asset_code,
+            agent_code,
         )
     except AgentNotFoundError as exc:
         raise HTTPException(

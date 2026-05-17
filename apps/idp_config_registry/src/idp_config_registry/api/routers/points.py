@@ -6,6 +6,13 @@ from idp_config_registry.api.dependencies import (
     UnitOfWorkFactory,
     get_unit_of_work_factory,
 )
+from idp_config_registry.api.path_params import (
+    AgentCodePath,
+    AssetCodePath,
+    PointCodePath,
+    SourceCodePath,
+    TenantCodePath,
+)
 from idp_config_registry.api.schemas.points import PointCreateRequest, PointResponse
 from idp_config_registry.application.errors import (
     DuplicatePointError,
@@ -36,21 +43,21 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
 )
 async def create_point(
-    tenant_id: str,
-    asset_id: str,
-    agent_id: str,
-    source_id: str,
+    tenant_code: TenantCodePath,
+    asset_code: AssetCodePath,
+    agent_code: AgentCodePath,
+    source_code: SourceCodePath,
     request: PointCreateRequest,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> PointResponse:
     try:
         point = await CreatePoint(unit_of_work_factory()).execute(
             CreatePointCommand(
-                tenant_code=tenant_id,
-                asset_code=asset_id,
-                agent_code=agent_id,
-                source_code=source_id,
-                point_code=request.point_id,
+                tenant_code=tenant_code,
+                asset_code=asset_code,
+                agent_code=agent_code,
+                source_code=source_code,
+                point_code=request.point_code,
                 point_key=request.point_key,
                 point_ref=request.point_ref,
                 name=request.name,
@@ -86,18 +93,18 @@ async def create_point(
 
 @router.get("", response_model=list[PointResponse])
 async def list_points(
-    tenant_id: str,
-    asset_id: str,
-    agent_id: str,
-    source_id: str,
+    tenant_code: TenantCodePath,
+    asset_code: AssetCodePath,
+    agent_code: AgentCodePath,
+    source_code: SourceCodePath,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> list[PointResponse]:
     try:
         points = await ListPoints(unit_of_work_factory()).execute(
-            tenant_id,
-            asset_id,
-            agent_id,
-            source_id,
+            tenant_code,
+            asset_code,
+            agent_code,
+            source_code,
         )
     except SourceNotFoundError as exc:
         raise HTTPException(
@@ -112,21 +119,21 @@ async def list_points(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_point(
-    tenant_id: str,
-    asset_id: str,
-    agent_id: str,
-    source_id: str,
-    point_id: str,
+    tenant_code: TenantCodePath,
+    asset_code: AssetCodePath,
+    agent_code: AgentCodePath,
+    source_code: SourceCodePath,
+    point_code: PointCodePath,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> None:
     try:
         await DeletePoint(unit_of_work_factory()).execute(
             DeletePointCommand(
-                tenant_code=tenant_id,
-                asset_code=asset_id,
-                agent_code=agent_id,
-                source_code=source_id,
-                point_code=point_id,
+                tenant_code=tenant_code,
+                asset_code=asset_code,
+                agent_code=agent_code,
+                source_code=source_code,
+                point_code=point_code,
             )
         )
     except PointNotFoundError as exc:

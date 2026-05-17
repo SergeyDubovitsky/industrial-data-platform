@@ -27,10 +27,9 @@ async def create_tenant(
     request: TenantCreateRequest,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> TenantResponse:
-    tenant_code = request.tenant_id
     try:
         tenant = await CreateTenant(unit_of_work_factory()).execute(
-            CreateTenantCommand(tenant_code=tenant_code, name=request.name)
+            CreateTenantCommand(tenant_code=request.tenant_code, name=request.name)
         )
     except DuplicateTenantError as exc:
         raise HTTPException(

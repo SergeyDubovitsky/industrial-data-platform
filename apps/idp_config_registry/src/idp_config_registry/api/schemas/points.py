@@ -24,6 +24,10 @@ class PointCreateRequest(BaseModel):
     publish_json: dict[str, Any] = Field(default_factory=dict)
     tags_json: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def point_code(self) -> str:
+        return self.point_id
+
 
 class PointResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)

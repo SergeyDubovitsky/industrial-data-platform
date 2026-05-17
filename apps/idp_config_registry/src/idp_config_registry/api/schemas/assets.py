@@ -13,6 +13,10 @@ class AssetCreateRequest(BaseModel):
     name: str = Field(min_length=1)
     description: str | None = None
 
+    @property
+    def asset_code(self) -> str:
+        return self.asset_id
+
 
 class AssetResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)

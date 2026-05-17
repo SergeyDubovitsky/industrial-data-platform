@@ -17,6 +17,10 @@ class AgentCreateRequest(BaseModel):
     name: str | None = None
     bootstrap_hint_json: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def agent_code(self) -> str:
+        return self.agent_id
+
 
 class AgentResponse(BaseModel):
     model_config = ConfigDict(use_enum_values=True)

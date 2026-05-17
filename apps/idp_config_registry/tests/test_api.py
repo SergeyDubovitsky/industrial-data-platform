@@ -12,6 +12,31 @@ def test_health_and_ready_endpoints() -> None:
     assert client.get("/ready").json() == {"status": "ready"}
 
 
+def test_openapi_keeps_public_id_path_parameter_names() -> None:
+    client = TestClient(create_app())
+
+    openapi = client.get("/openapi.json").json()
+    agent_create_params = openapi["paths"][
+        "/tenants/{tenant_id}/assets/{asset_id}/agents"
+    ]["post"]["parameters"]
+    point_delete_params = openapi["paths"][
+        "/tenants/{tenant_id}/assets/{asset_id}/agents/{agent_id}"
+        "/sources/{source_id}/points/{point_id}"
+    ]["delete"]["parameters"]
+
+    assert [param["name"] for param in agent_create_params] == [
+        "tenant_id",
+        "asset_id",
+    ]
+    assert [param["name"] for param in point_delete_params] == [
+        "tenant_id",
+        "asset_id",
+        "agent_id",
+        "source_id",
+        "point_id",
+    ]
+
+
 def test_create_and_list_tenants() -> None:
     client = TestClient(create_app())
 
