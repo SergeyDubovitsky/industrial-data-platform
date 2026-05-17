@@ -25,7 +25,7 @@ def utc_now() -> datetime:
 
 @dataclass(frozen=True)
 class Tenant:
-    tenant_id: str
+    tenant_code: str
     name: str
     status: TenantStatus = TenantStatus.ACTIVE
     created_at: datetime = field(default_factory=utc_now)
@@ -34,8 +34,8 @@ class Tenant:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
@@ -46,8 +46,8 @@ class Tenant:
 
 @dataclass(frozen=True)
 class Asset:
-    tenant_id: str
-    asset_id: str
+    tenant_code: str
+    asset_code: str
     name: str
     description: str | None = None
     status: AssetStatus = AssetStatus.ACTIVE
@@ -57,13 +57,13 @@ class Asset:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
@@ -74,9 +74,9 @@ class Asset:
 
 @dataclass(frozen=True)
 class Agent:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
     name: str | None = None
     status: AgentStatus = AgentStatus.ACTIVE
     bootstrap_hint_json: dict[str, Any] = field(default_factory=dict)
@@ -86,27 +86,27 @@ class Agent:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
-            "agent_id",
-            require_path_id(self.agent_id, field_name="agent_id"),
+            "agent_code",
+            require_path_id(self.agent_code, field_name="agent_id"),
         )
 
 
 @dataclass(frozen=True)
 class Source:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
     source_type: str
     enabled: bool = True
     name: str | None = None
@@ -120,23 +120,23 @@ class Source:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
-            "agent_id",
-            require_path_id(self.agent_id, field_name="agent_id"),
+            "agent_code",
+            require_path_id(self.agent_code, field_name="agent_id"),
         )
         object.__setattr__(
             self,
-            "source_id",
-            require_path_id(self.source_id, field_name="source_id"),
+            "source_code",
+            require_path_id(self.source_code, field_name="source_id"),
         )
         object.__setattr__(
             self,
@@ -147,11 +147,11 @@ class Source:
 
 @dataclass(frozen=True)
 class Point:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
-    point_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
+    point_code: str
     point_key: str
     point_ref: str
     name: str
@@ -170,28 +170,28 @@ class Point:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
-            "agent_id",
-            require_path_id(self.agent_id, field_name="agent_id"),
+            "agent_code",
+            require_path_id(self.agent_code, field_name="agent_id"),
         )
         object.__setattr__(
             self,
-            "source_id",
-            require_path_id(self.source_id, field_name="source_id"),
+            "source_code",
+            require_path_id(self.source_code, field_name="source_id"),
         )
         object.__setattr__(
             self,
-            "point_id",
-            require_non_empty(self.point_id, field_name="point_id"),
+            "point_code",
+            require_non_empty(self.point_code, field_name="point_id"),
         )
         object.__setattr__(self, "point_key", require_point_key(self.point_key))
         object.__setattr__(
@@ -213,9 +213,9 @@ class Point:
 
 @dataclass(frozen=True)
 class AgentRuntimeConfigRevision:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
     config_revision: str
     issued_at: datetime
     agent_runtime_payload_json: dict[str, Any]
@@ -225,18 +225,18 @@ class AgentRuntimeConfigRevision:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
-            "agent_id",
-            require_path_id(self.agent_id, field_name="agent_id"),
+            "agent_code",
+            require_path_id(self.agent_code, field_name="agent_id"),
         )
         object.__setattr__(
             self,
@@ -247,10 +247,10 @@ class AgentRuntimeConfigRevision:
 
 @dataclass(frozen=True)
 class SourceConfigRevision:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
     source_config_revision: str
     config_revision: str
     issued_at: datetime
@@ -261,23 +261,23 @@ class SourceConfigRevision:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
-            "agent_id",
-            require_path_id(self.agent_id, field_name="agent_id"),
+            "agent_code",
+            require_path_id(self.agent_code, field_name="agent_id"),
         )
         object.__setattr__(
             self,
-            "source_id",
-            require_path_id(self.source_id, field_name="source_id"),
+            "source_code",
+            require_path_id(self.source_code, field_name="source_id"),
         )
         object.__setattr__(
             self,
@@ -296,14 +296,14 @@ class SourceConfigRevision:
 
 @dataclass(frozen=True)
 class ConfigOutboxRecord:
-    tenant_id: str
+    tenant_code: str
     outbox_id: UUID
     idempotency_key: str
-    asset_id: str
-    agent_id: str
+    asset_code: str
+    agent_code: str
     config_revision: str
     config_scope: str
-    source_id: str | None
+    source_code: str | None
     source_config_revision: str | None
     message_type: str
     kafka_topic: str
@@ -323,26 +323,26 @@ class ConfigOutboxRecord:
     def new(
         cls,
         *,
-        tenant_id: str,
+        tenant_code: str,
         idempotency_key: str,
-        asset_id: str,
-        agent_id: str,
+        asset_code: str,
+        agent_code: str,
         config_revision: str,
         config_scope: str,
-        source_id: str | None,
+        source_code: str | None,
         source_config_revision: str | None,
         kafka_key: str,
         payload_json: dict[str, Any],
     ) -> ConfigOutboxRecord:
         return cls(
-            tenant_id=tenant_id,
+            tenant_code=tenant_code,
             outbox_id=uuid4(),
             idempotency_key=idempotency_key,
-            asset_id=asset_id,
-            agent_id=agent_id,
+            asset_code=asset_code,
+            agent_code=agent_code,
             config_revision=config_revision,
             config_scope=config_scope,
-            source_id=source_id,
+            source_code=source_code,
             source_config_revision=source_config_revision,
             message_type="idp.edge.config.delivery.v1",
             kafka_topic="idp.edge.configs.v1",
@@ -353,8 +353,8 @@ class ConfigOutboxRecord:
     def __post_init__(self) -> None:
         object.__setattr__(
             self,
-            "tenant_id",
-            require_non_empty(self.tenant_id, field_name="tenant_id"),
+            "tenant_code",
+            require_non_empty(self.tenant_code, field_name="tenant_id"),
         )
         object.__setattr__(
             self,
@@ -363,13 +363,13 @@ class ConfigOutboxRecord:
         )
         object.__setattr__(
             self,
-            "asset_id",
-            require_path_id(self.asset_id, field_name="asset_id"),
+            "asset_code",
+            require_path_id(self.asset_code, field_name="asset_id"),
         )
         object.__setattr__(
             self,
-            "agent_id",
-            require_path_id(self.agent_id, field_name="agent_id"),
+            "agent_code",
+            require_path_id(self.agent_code, field_name="agent_id"),
         )
         object.__setattr__(
             self,
@@ -437,14 +437,14 @@ class ConfigOutboxRecord:
 
     def _replace(self, **changes: object) -> ConfigOutboxRecord:
         values = {
-            "tenant_id": self.tenant_id,
+            "tenant_code": self.tenant_code,
             "outbox_id": self.outbox_id,
             "idempotency_key": self.idempotency_key,
-            "asset_id": self.asset_id,
-            "agent_id": self.agent_id,
+            "asset_code": self.asset_code,
+            "agent_code": self.agent_code,
             "config_revision": self.config_revision,
             "config_scope": self.config_scope,
-            "source_id": self.source_id,
+            "source_code": self.source_code,
             "source_config_revision": self.source_config_revision,
             "message_type": self.message_type,
             "kafka_topic": self.kafka_topic,

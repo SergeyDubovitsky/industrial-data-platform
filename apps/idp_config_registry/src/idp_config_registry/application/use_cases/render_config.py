@@ -29,9 +29,9 @@ from idp_config_registry.domain.entities import (
 
 @dataclass(frozen=True)
 class RenderAgentRuntimeConfigCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
     config_revision: str
     issued_at: datetime
     source_config_revisions: dict[str, str] | None = None
@@ -39,7 +39,7 @@ class RenderAgentRuntimeConfigCommand:
 
 @dataclass(frozen=True)
 class RenderedSourceConfig:
-    source_id: str
+    source_code: str
     source_config_revision: str
     payload: dict[str, Any]
 
@@ -62,33 +62,33 @@ class RenderAgentRuntimeConfig:
     async def execute(self, command: RenderAgentRuntimeConfigCommand) -> RenderedAgentRuntimeConfig:
         async with self._unit_of_work as unit_of_work:
             agent = await unit_of_work.agents.get(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
             )
             if agent is None:
                 raise AgentNotFoundError(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
                 )
             sources = await unit_of_work.sources.list_for_agent(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
             )
             if not sources:
                 raise ConfigRenderError(
-                    f"Agent {command.agent_id!r} has no sources to render"
+                    f"Agent {command.agent_code!r} has no sources to render"
                 )
 
             rendered_sources: list[RenderedSourceConfig] = []
             for source in sources:
                 points = await unit_of_work.points.list_for_source(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
-                    source.source_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
+                    source.source_code,
                 )
                 rendered_source = self._render_source(command, source, points)
                 self._validator.validate_source_config(rendered_source.payload)
@@ -107,18 +107,18 @@ class RenderAgentRuntimeConfig:
         source: Source,
         points: list[Point],
     ) -> RenderedSourceConfig:
-        source_config_revision = _source_config_revision(command, source.source_id)
+        source_config_revision = _source_config_revision(command, source.source_code)
         acquisition_defaults = normalize_acquisition_settings(
             source.acquisition_defaults_json
         )
         publish_defaults = normalize_publish_settings(source.publish_defaults_json)
         payload = {
             "message_type": "idp.edge.source-config.v1",
-            "tenant_id": command.tenant_id,
-            "asset_id": command.asset_id,
-            "agent_id": command.agent_id,
+            "tenant_id": command.tenant_code,
+            "asset_id": command.asset_code,
+            "agent_id": command.agent_code,
             "config_revision": command.config_revision,
-            "source_id": source.source_id,
+            "source_id": source.source_code,
             "source_config_revision": source_config_revision,
             "source_type": source.source_type,
             "enabled": source.enabled,
@@ -136,7 +136,7 @@ class RenderAgentRuntimeConfig:
             ],
         }
         return RenderedSourceConfig(
-            source_id=source.source_id,
+            source_code=source.source_code,
             source_config_revision=source_config_revision,
             payload=payload,
         )
@@ -148,14 +148,14 @@ class RenderAgentRuntimeConfig:
     ) -> dict[str, Any]:
         return {
             "message_type": "idp.edge.agent-runtime-config.v1",
-            "tenant_id": command.tenant_id,
-            "asset_id": command.asset_id,
-            "agent_id": command.agent_id,
+            "tenant_id": command.tenant_code,
+            "asset_id": command.asset_code,
+            "agent_id": command.agent_code,
             "config_revision": command.config_revision,
             "issued_at": _format_datetime(command.issued_at),
             "sources": [
                 {
-                    "source_id": rendered_source.source_id,
+                    "source_id": rendered_source.source_code,
                     "source_config_revision": (
                         rendered_source.source_config_revision
                     ),
@@ -168,16 +168,16 @@ class RenderAgentRuntimeConfig:
 
 def _source_config_revision(
     command: RenderAgentRuntimeConfigCommand,
-    source_id: str,
+    source_code: str,
 ) -> str:
     if command.source_config_revisions is not None:
-        revision = command.source_config_revisions.get(source_id)
+        revision = command.source_config_revisions.get(source_code)
         if revision is None:
             raise ConfigRenderError(
-                f"Missing source_config_revision for source {source_id!r}"
+                f"Missing source_config_revision for source {source_code!r}"
             )
         return revision
-    return f"{command.config_revision}-{source_id}"
+    return f"{command.config_revision}-{source_code}"
 
 
 def _point_payload(
@@ -251,17 +251,17 @@ class StoreRenderedAgentRuntimeConfig:
         async with self._unit_of_work as unit_of_work:
             if (
                 await unit_of_work.agent_runtime_config_revisions.get(
-                    agent_runtime_revision.tenant_id,
-                    agent_runtime_revision.asset_id,
-                    agent_runtime_revision.agent_id,
+                    agent_runtime_revision.tenant_code,
+                    agent_runtime_revision.asset_code,
+                    agent_runtime_revision.agent_code,
                     agent_runtime_revision.config_revision,
                 )
                 is not None
             ):
                 raise DuplicateConfigRevisionError(
-                    agent_runtime_revision.tenant_id,
-                    agent_runtime_revision.asset_id,
-                    agent_runtime_revision.agent_id,
+                    agent_runtime_revision.tenant_code,
+                    agent_runtime_revision.asset_code,
+                    agent_runtime_revision.agent_code,
                     agent_runtime_revision.config_revision,
                 )
             await unit_of_work.agent_runtime_config_revisions.add(
@@ -289,9 +289,9 @@ def _agent_runtime_revision_from_payload(
     payload: dict[str, Any],
 ) -> AgentRuntimeConfigRevision:
     return AgentRuntimeConfigRevision(
-        tenant_id=str(payload["tenant_id"]),
-        asset_id=str(payload["asset_id"]),
-        agent_id=str(payload["agent_id"]),
+        tenant_code=str(payload["tenant_id"]),
+        asset_code=str(payload["asset_id"]),
+        agent_code=str(payload["agent_id"]),
         config_revision=str(payload["config_revision"]),
         issued_at=_parse_datetime(str(payload["issued_at"])),
         agent_runtime_payload_json=dict(payload),
@@ -304,10 +304,10 @@ def _source_revision_from_payload(
     issued_at: datetime,
 ) -> SourceConfigRevision:
     return SourceConfigRevision(
-        tenant_id=str(payload["tenant_id"]),
-        asset_id=str(payload["asset_id"]),
-        agent_id=str(payload["agent_id"]),
-        source_id=str(payload["source_id"]),
+        tenant_code=str(payload["tenant_id"]),
+        asset_code=str(payload["asset_id"]),
+        agent_code=str(payload["agent_id"]),
+        source_code=str(payload["source_id"]),
         source_config_revision=str(payload["source_config_revision"]),
         config_revision=str(payload["config_revision"]),
         issued_at=issued_at,
@@ -323,42 +323,42 @@ def _outbox_records_for_rendered_config(
     rendered: RenderedAgentRuntimeConfig,
 ) -> list[ConfigOutboxRecord]:
     agent_runtime_payload = rendered.agent_runtime_payload
-    tenant_id = str(agent_runtime_payload["tenant_id"])
-    asset_id = str(agent_runtime_payload["asset_id"])
-    agent_id = str(agent_runtime_payload["agent_id"])
+    tenant_code = str(agent_runtime_payload["tenant_id"])
+    asset_code = str(agent_runtime_payload["asset_id"])
+    agent_code = str(agent_runtime_payload["agent_id"])
     config_revision = str(agent_runtime_payload["config_revision"])
     issued_at = str(agent_runtime_payload["issued_at"])
 
     records = [
         ConfigOutboxRecord.new(
-            tenant_id=tenant_id,
+            tenant_code=tenant_code,
             idempotency_key=(
-                f"{tenant_id}|{asset_id}|{agent_id}|{config_revision}|agent_runtime"
+                f"{tenant_code}|{asset_code}|{agent_code}|{config_revision}|agent_runtime"
             ),
-            asset_id=asset_id,
-            agent_id=agent_id,
+            asset_code=asset_code,
+            agent_code=agent_code,
             config_revision=config_revision,
             config_scope="agent_runtime",
-            source_id=None,
+            source_code=None,
             source_config_revision=None,
-            kafka_key=f"{tenant_id}|{asset_id}|{agent_id}|agent_runtime",
+            kafka_key=f"{tenant_code}|{asset_code}|{agent_code}|agent_runtime",
             payload_json={
                 "message_type": "idp.edge.config.delivery.v1",
-                "tenant_id": tenant_id,
-                "asset_id": asset_id,
-                "agent_id": agent_id,
+                "tenant_id": tenant_code,
+                "asset_id": asset_code,
+                "agent_id": agent_code,
                 "config_revision": config_revision,
                 "config_scope": "agent_runtime",
                 "source_id": None,
                 "source_config_revision": None,
-                "target_mqtt_topic": f"idp/v1/agents/{agent_id}/config/agent-runtime",
+                "target_mqtt_topic": f"idp/v1/agents/{agent_code}/config/agent-runtime",
                 "mqtt_retain": True,
                 "mqtt_qos": 1,
                 "operation": "upsert",
                 "payload_message_type": "idp.edge.agent-runtime-config.v1",
                 "payload": dict(agent_runtime_payload),
                 "idempotency_key": (
-                    f"{tenant_id}|{asset_id}|{agent_id}|{config_revision}|agent_runtime"
+                    f"{tenant_code}|{asset_code}|{agent_code}|{config_revision}|agent_runtime"
                 ),
                 "issued_at": issued_at,
             },
@@ -367,34 +367,34 @@ def _outbox_records_for_rendered_config(
 
     for rendered_source in rendered.source_payloads:
         source_payload = rendered_source.payload
-        source_id = str(source_payload["source_id"])
+        source_code = str(source_payload["source_id"])
         source_config_revision = str(source_payload["source_config_revision"])
-        config_scope = f"source:{source_id}"
+        config_scope = f"source:{source_code}"
         idempotency_key = (
-            f"{tenant_id}|{asset_id}|{agent_id}|{config_revision}|source|{source_id}"
+            f"{tenant_code}|{asset_code}|{agent_code}|{config_revision}|source|{source_code}"
         )
         records.append(
             ConfigOutboxRecord.new(
-                tenant_id=tenant_id,
+                tenant_code=tenant_code,
                 idempotency_key=idempotency_key,
-                asset_id=asset_id,
-                agent_id=agent_id,
+                asset_code=asset_code,
+                agent_code=agent_code,
                 config_revision=config_revision,
                 config_scope=config_scope,
-                source_id=source_id,
+                source_code=source_code,
                 source_config_revision=source_config_revision,
-                kafka_key=f"{tenant_id}|{asset_id}|{agent_id}|{config_scope}",
+                kafka_key=f"{tenant_code}|{asset_code}|{agent_code}|{config_scope}",
                 payload_json={
                     "message_type": "idp.edge.config.delivery.v1",
-                    "tenant_id": tenant_id,
-                    "asset_id": asset_id,
-                    "agent_id": agent_id,
+                    "tenant_id": tenant_code,
+                    "asset_id": asset_code,
+                    "agent_id": agent_code,
                     "config_revision": config_revision,
                     "config_scope": config_scope,
-                    "source_id": source_id,
+                    "source_id": source_code,
                     "source_config_revision": source_config_revision,
                     "target_mqtt_topic": (
-                        f"idp/v1/agents/{agent_id}/sources/{source_id}/config"
+                        f"idp/v1/agents/{agent_code}/sources/{source_code}/config"
                     ),
                     "mqtt_retain": True,
                     "mqtt_qos": 1,

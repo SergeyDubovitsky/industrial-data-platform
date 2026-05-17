@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
 from sqladmin import action
-from sqladmin.helpers import object_identifier_values
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
@@ -137,15 +137,15 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
     name = "Tenant"
     name_plural = "Tenants"
     category = "Registry"
-    column_list = model_columns(TenantModel, "tenant_id", "name", "status", "updated_at")
+    column_list = model_columns(TenantModel, "tenant_code", "name", "status", "updated_at")
     column_details_list = all_model_columns(TenantModel)
     form_columns = [
-        "tenant_id",
+        "tenant_code",
         "name",
         "status",
     ]
     form_create_rules = [
-        "tenant_id",
+        "tenant_code",
         "name",
     ]
     form_edit_rules = [
@@ -156,7 +156,7 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
     async def insert_model(self, request: Request, data: dict[str, object]) -> object:
         tenant = await CreateTenant(get_request_state(request).unit_of_work_factory()).execute(
             CreateTenantCommand(
-                tenant_id=str(data["tenant_id"]),
+                tenant_code=str(data["tenant_code"]),
                 name=str(data["name"]),
             )
         )
@@ -170,7 +170,7 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
     ) -> object:
         tenant = await UpdateTenant(get_request_state(request).unit_of_work_factory()).execute(
             UpdateTenantCommand(
-                tenant_id=str(pk),
+                tenant_code=str(pk),
                 name=str(data["name"]),
                 status=TenantStatus(str(data["status"])),
             )
@@ -179,7 +179,7 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
 
     async def delete_model(self, request: Request, pk: Any) -> None:
         await DeleteTenant(get_request_state(request).unit_of_work_factory()).execute(
-            DeleteTenantCommand(tenant_id=str(pk))
+            DeleteTenantCommand(tenant_code=str(pk))
         )
 
     async def _get_object_from_uow(self, pk: str, unit_of_work: Any) -> Any:
@@ -195,21 +195,21 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
     column_list = model_columns(
         AssetModel,
         "tenant_id",
-        "asset_id",
+        "asset_code",
         "name",
         "status",
         "updated_at",
     )
     column_details_list = all_model_columns(AssetModel)
     form_columns = [
-        "asset_id",
+        "asset_code",
         "name",
         "description",
         "status",
     ]
     form_create_rules = [
         TENANT_SELECTOR_FIELD,
-        "asset_id",
+        "asset_code",
         "name",
         "description",
     ]
@@ -248,14 +248,14 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
         return attach_selector_value(
             model,
             field_name=TENANT_SELECTOR_FIELD,
-            value=str(model.tenant_id),
+            value=str(model.tenant_code),
         )
 
     async def insert_model(self, request: Request, data: dict[str, object]) -> object:
         asset = await CreateAsset(get_request_state(request).unit_of_work_factory()).execute(
             CreateAssetCommand(
-                tenant_id=str(data[TENANT_SELECTOR_FIELD]),
-                asset_id=str(data["asset_id"]),
+                tenant_code=str(data[TENANT_SELECTOR_FIELD]),
+                asset_code=str(data["asset_code"]),
                 name=str(data["name"]),
                 description=optional_string(data.get("description")),
             )
@@ -268,11 +268,11 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_id, asset_id = object_identifier_values(pk, AssetModel)
+        tenant_code, asset_code = _decode_composite_pk(pk, 2)
         asset = await UpdateAsset(get_request_state(request).unit_of_work_factory()).execute(
             UpdateAssetCommand(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
                 name=str(data["name"]),
                 description=optional_string(data.get("description")),
                 status=AssetStatus(str(data["status"])),
@@ -281,18 +281,18 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
         return _asset_model(asset)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_id, asset_id = object_identifier_values(str(pk), AssetModel)
+        tenant_code, asset_code = _decode_composite_pk(str(pk), 2)
         await DeleteAsset(get_request_state(request).unit_of_work_factory()).execute(
             DeleteAssetCommand(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
             )
         )
 
     async def _get_object_from_uow(self, pk: str, unit_of_work: Any) -> Any:
-        tenant_id, asset_id = object_identifier_values(pk, AssetModel)
+        tenant_code, asset_code = _decode_composite_pk(pk, 2)
         async with unit_of_work as active_unit_of_work:
-            asset = await active_unit_of_work.assets.get(str(tenant_id), str(asset_id))
+            asset = await active_unit_of_work.assets.get(str(tenant_code), str(asset_code))
         return _asset_model(asset) if asset is not None else None
 
 
@@ -304,21 +304,21 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         AgentModel,
         "tenant_id",
         "asset_id",
-        "agent_id",
+        "agent_code",
         "name",
         "status",
         "updated_at",
     )
     column_details_list = all_model_columns(AgentModel)
     form_columns = [
-        "agent_id",
+        "agent_code",
         "name",
         "status",
         "bootstrap_hint_json",
     ]
     form_create_rules = [
         ASSET_SELECTOR_FIELD,
-        "agent_id",
+        "agent_code",
         "name",
     ]
     form_edit_rules = [
@@ -342,12 +342,12 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         raw_pks = str(request.query_params.get("pks", ""))
         agent_targets = [
             AgentRenderTarget(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
-                agent_id=str(agent_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
+                agent_code=str(agent_code),
             )
-            for tenant_id, asset_id, agent_id in (
-                object_identifier_values(pk, AgentModel)
+            for tenant_code, asset_code, agent_code in (
+                _decode_composite_pk(pk, 3)
                 for pk in raw_pks.split(",")
                 if pk
             )
@@ -391,8 +391,8 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
             field_name=ASSET_SELECTOR_FIELD,
             value=encode_asset_selection(
                 AssetSelection(
-                    tenant_id=str(model.tenant_id),
-                    asset_id=str(model.asset_id),
+                    tenant_code=str(model.tenant_code),
+                    asset_code=str(model.asset_code),
                 )
             ),
         )
@@ -401,9 +401,9 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         asset_selection = _require_asset_selection(data.get(ASSET_SELECTOR_FIELD))
         agent = await CreateAgent(get_request_state(request).unit_of_work_factory()).execute(
             CreateAgentCommand(
-                tenant_id=asset_selection.tenant_id,
-                asset_id=asset_selection.asset_id,
-                agent_id=str(data["agent_id"]),
+                tenant_code=asset_selection.tenant_code,
+                asset_code=asset_selection.asset_code,
+                agent_code=str(data["agent_code"]),
                 name=optional_string(data.get("name")),
             )
         )
@@ -415,12 +415,12 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_id, asset_id, agent_id = object_identifier_values(pk, AgentModel)
+        tenant_code, asset_code, agent_code = _decode_composite_pk(pk, 3)
         agent = await UpdateAgent(get_request_state(request).unit_of_work_factory()).execute(
             UpdateAgentCommand(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
-                agent_id=str(agent_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
+                agent_code=str(agent_code),
                 name=optional_string(data.get("name")),
                 status=AgentStatus(str(data["status"])),
                 bootstrap_hint_json=json_object(
@@ -432,22 +432,22 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         return _agent_model(agent)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_id, asset_id, agent_id = object_identifier_values(str(pk), AgentModel)
+        tenant_code, asset_code, agent_code = _decode_composite_pk(str(pk), 3)
         await DeleteAgent(get_request_state(request).unit_of_work_factory()).execute(
             DeleteAgentCommand(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
-                agent_id=str(agent_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
+                agent_code=str(agent_code),
             )
         )
 
     async def _get_object_from_uow(self, pk: str, unit_of_work: Any) -> Any:
-        tenant_id, asset_id, agent_id = object_identifier_values(pk, AgentModel)
+        tenant_code, asset_code, agent_code = _decode_composite_pk(pk, 3)
         async with unit_of_work as active_unit_of_work:
             agent = await active_unit_of_work.agents.get(
-                str(tenant_id),
-                str(asset_id),
-                str(agent_id),
+                str(tenant_code),
+                str(asset_code),
+                str(agent_code),
             )
         return _agent_model(agent) if agent is not None else None
 
@@ -459,9 +459,8 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     column_list = model_columns(
         SourceModel,
         "tenant_id",
-        "asset_id",
         "agent_id",
-        "source_id",
+        "source_code",
         "source_type",
         "enabled",
         "name",
@@ -469,7 +468,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     )
     column_details_list = all_model_columns(SourceModel)
     form_columns = [
-        "source_id",
+        "source_code",
         "source_type",
         "enabled",
         "name",
@@ -480,7 +479,7 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
     ]
     form_create_rules = [
         AGENT_SELECTOR_FIELD,
-        "source_id",
+        "source_code",
         "source_type",
         "enabled",
         "name",
@@ -532,10 +531,10 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
         agent_selection = _require_agent_selection(data.get(AGENT_SELECTOR_FIELD))
         source = await CreateSource(get_request_state(request).unit_of_work_factory()).execute(
             CreateSourceCommand(
-                tenant_id=agent_selection.tenant_id,
-                asset_id=agent_selection.asset_id,
-                agent_id=agent_selection.agent_id,
-                source_id=str(data["source_id"]),
+                tenant_code=agent_selection.tenant_code,
+                asset_code=agent_selection.asset_code,
+                agent_code=agent_selection.agent_code,
+                source_code=str(data["source_code"]),
                 source_type=str(data["source_type"]),
                 enabled=optional_bool(data.get("enabled"), default=True),
                 name=optional_string(data.get("name")),
@@ -552,13 +551,13 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_id, asset_id, agent_id, source_id = object_identifier_values(pk, SourceModel)
+        tenant_code, asset_code, agent_code, source_code = _decode_composite_pk(pk, 4)
         source = await UpdateSource(get_request_state(request).unit_of_work_factory()).execute(
             UpdateSourceCommand(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
-                agent_id=str(agent_id),
-                source_id=str(source_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
+                agent_code=str(agent_code),
+                source_code=str(source_code),
                 source_type=str(data["source_type"]),
                 enabled=optional_bool(data.get("enabled"), default=True),
                 name=optional_string(data.get("name")),
@@ -580,30 +579,24 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
         return _source_model(source)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_id, asset_id, agent_id, source_id = object_identifier_values(
-            str(pk),
-            SourceModel,
-        )
+        tenant_code, asset_code, agent_code, source_code = _decode_composite_pk(str(pk), 4)
         await DeleteSource(get_request_state(request).unit_of_work_factory()).execute(
             DeleteSourceCommand(
-                tenant_id=str(tenant_id),
-                asset_id=str(asset_id),
-                agent_id=str(agent_id),
-                source_id=str(source_id),
+                tenant_code=str(tenant_code),
+                asset_code=str(asset_code),
+                agent_code=str(agent_code),
+                source_code=str(source_code),
             )
         )
 
     async def _get_object_from_uow(self, pk: str, unit_of_work: Any) -> Any:
-        tenant_id, asset_id, agent_id, source_id = object_identifier_values(
-            pk,
-            SourceModel,
-        )
+        tenant_code, asset_code, agent_code, source_code = _decode_composite_pk(pk, 4)
         async with unit_of_work as active_unit_of_work:
             source = await active_unit_of_work.sources.get(
-                str(tenant_id),
-                str(asset_id),
-                str(agent_id),
-                str(source_id),
+                str(tenant_code),
+                str(asset_code),
+                str(agent_code),
+                str(source_code),
             )
         return _source_model(source) if source is not None else None
 
@@ -616,7 +609,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         PointModel,
         "tenant_id",
         "source_id",
-        "point_id",
+        "point_code",
         "point_key",
         "name",
         "value_type",
@@ -626,7 +619,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
     )
     column_details_list = all_model_columns(PointModel)
     form_columns = [
-        "point_id",
+        "point_code",
         "point_key",
         "point_ref",
         "name",
@@ -642,7 +635,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
     ]
     form_create_rules = [
         SOURCE_SELECTOR_FIELD,
-        "point_id",
+        "point_code",
         "point_key",
         "point_ref",
         "name",
@@ -699,10 +692,10 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
             field_name=SOURCE_SELECTOR_FIELD,
             value=encode_source_selection(
                 SourceSelection(
-                    tenant_id=str(model.tenant_id),
-                    asset_id=str(model.asset_id),
-                    agent_id=str(model.agent_id),
-                    source_id=str(model.source_id),
+                    tenant_code=str(model.tenant_code),
+                    asset_code=str(model.asset_code),
+                    agent_code=str(model.agent_code),
+                    source_code=str(model.source_code),
                 )
             ),
         )
@@ -711,11 +704,11 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         source_selection = _require_source_selection(data.get(SOURCE_SELECTOR_FIELD))
         point = await CreatePoint(get_request_state(request).unit_of_work_factory()).execute(
             CreatePointCommand(
-                tenant_id=source_selection.tenant_id,
-                asset_id=source_selection.asset_id,
-                agent_id=source_selection.agent_id,
-                source_id=source_selection.source_id,
-                point_id=str(data["point_id"]),
+                tenant_code=source_selection.tenant_code,
+                asset_code=source_selection.asset_code,
+                agent_code=source_selection.agent_code,
+                source_code=source_selection.source_code,
+                point_code=str(data["point_code"]),
                 point_key=str(data["point_key"]),
                 point_ref=str(data["point_ref"]),
                 name=str(data["name"]),
@@ -735,11 +728,11 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_id, point_id = object_identifier_values(pk, PointModel)
+        tenant_code, point_code = _decode_composite_pk(pk, 2)
         point = await UpdatePoint(get_request_state(request).unit_of_work_factory()).execute(
             UpdatePointCommand(
-                tenant_id=str(tenant_id),
-                point_id=str(point_id),
+                tenant_code=str(tenant_code),
+                point_code=str(point_code),
                 point_key=str(data["point_key"]),
                 point_ref=str(data["point_ref"]),
                 name=str(data["name"]),
@@ -766,27 +759,28 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         return _point_model(point)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_id, point_id = object_identifier_values(str(pk), PointModel)
+        tenant_code, point_code = _decode_composite_pk(str(pk), 2)
         await DeletePoint(get_request_state(request).unit_of_work_factory()).execute(
             DeletePointCommand(
-                tenant_id=str(tenant_id),
-                point_id=str(point_id),
+                tenant_code=str(tenant_code),
+                point_code=str(point_code),
             )
         )
 
     async def _get_object_from_uow(self, pk: str, unit_of_work: Any) -> Any:
-        tenant_id, point_id = object_identifier_values(pk, PointModel)
+        tenant_code, point_code = _decode_composite_pk(pk, 2)
         async with unit_of_work as active_unit_of_work:
             point = await active_unit_of_work.points.get_by_id(
-                str(tenant_id),
-                str(point_id),
+                str(tenant_code),
+                str(point_code),
             )
         return _point_model(point) if point is not None else None
 
 
 def _tenant_model(tenant: Tenant) -> TenantModel:
     return TenantModel(
-        tenant_id=tenant.tenant_id,
+        id=uuid4(),
+        tenant_code=tenant.tenant_code,
         name=tenant.name,
         status=tenant.status.value,
         created_at=tenant.created_at,
@@ -795,36 +789,45 @@ def _tenant_model(tenant: Tenant) -> TenantModel:
 
 
 def _asset_model(asset: Asset) -> AssetModel:
-    return AssetModel(
-        tenant_id=asset.tenant_id,
-        asset_id=asset.asset_id,
+    model = AssetModel(
+        id=uuid4(),
+        tenant_id=uuid4(),
+        asset_code=asset.asset_code,
         name=asset.name,
         description=asset.description,
         status=asset.status.value,
         created_at=asset.created_at,
         updated_at=asset.updated_at,
     )
+    model.tenant_code = asset.tenant_code
+    model.asset_code = asset.asset_code
+    return model
 
 
 def _agent_model(agent: Agent) -> AgentModel:
-    return AgentModel(
-        tenant_id=agent.tenant_id,
-        asset_id=agent.asset_id,
-        agent_id=agent.agent_id,
+    model = AgentModel(
+        id=uuid4(),
+        tenant_id=uuid4(),
+        asset_id=uuid4(),
+        agent_code=agent.agent_code,
         name=agent.name,
         status=agent.status.value,
         bootstrap_hint_json=dict(agent.bootstrap_hint_json),
         created_at=agent.created_at,
         updated_at=agent.updated_at,
     )
+    model.tenant_code = agent.tenant_code
+    model.asset_code = agent.asset_code
+    model.agent_code = agent.agent_code
+    return model
 
 
 def _source_model(source: Source) -> SourceModel:
-    return SourceModel(
-        tenant_id=source.tenant_id,
-        asset_id=source.asset_id,
-        agent_id=source.agent_id,
-        source_id=source.source_id,
+    model = SourceModel(
+        id=uuid4(),
+        tenant_id=uuid4(),
+        agent_id=uuid4(),
+        source_code=source.source_code,
         source_type=source.source_type,
         enabled=source.enabled,
         name=source.name,
@@ -835,15 +838,19 @@ def _source_model(source: Source) -> SourceModel:
         created_at=source.created_at,
         updated_at=source.updated_at,
     )
+    model.tenant_code = source.tenant_code
+    model.asset_code = source.asset_code
+    model.agent_code = source.agent_code
+    model.source_code = source.source_code
+    return model
 
 
 def _point_model(point: Point) -> PointModel:
-    return PointModel(
-        tenant_id=point.tenant_id,
-        asset_id=point.asset_id,
-        agent_id=point.agent_id,
-        source_id=point.source_id,
-        point_id=point.point_id,
+    model = PointModel(
+        id=uuid4(),
+        tenant_id=uuid4(),
+        source_id=uuid4(),
+        point_code=point.point_code,
         point_key=point.point_key,
         point_ref=point.point_ref,
         name=point.name,
@@ -859,6 +866,12 @@ def _point_model(point: Point) -> PointModel:
         created_at=point.created_at,
         updated_at=point.updated_at,
     )
+    model.tenant_code = point.tenant_code
+    model.asset_code = point.asset_code
+    model.agent_code = point.agent_code
+    model.source_code = point.source_code
+    model.point_code = point.point_code
+    return model
 
 
 def _require_asset_selection(value: object | None) -> AssetSelection:
@@ -882,8 +895,17 @@ def _require_source_selection(value: object | None) -> SourceSelection:
 def _encode_agent_model_selection(model: Any) -> str:
     return encode_agent_selection(
         AgentSelection(
-            tenant_id=str(model.tenant_id),
-            asset_id=str(model.asset_id),
-            agent_id=str(model.agent_id),
+            tenant_code=str(model.tenant_code),
+            asset_code=str(model.asset_code),
+            agent_code=str(model.agent_code),
         )
     )
+
+
+def _decode_composite_pk(value: str, expected_parts: int) -> tuple[str, ...]:
+    parts = tuple(value.split(";"))
+    if len(parts) != expected_parts:
+        raise ValueError(
+            f"Expected {expected_parts} public code parts in backoffice object id"
+        )
+    return parts

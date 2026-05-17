@@ -43,14 +43,19 @@ async def create_point(
     request: PointCreateRequest,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> PointResponse:
+    tenant_code = tenant_id
+    asset_code = asset_id
+    agent_code = agent_id
+    source_code = source_id
+    point_code = request.point_id
     try:
         point = await CreatePoint(unit_of_work_factory()).execute(
             CreatePointCommand(
-                tenant_id=tenant_id,
-                asset_id=asset_id,
-                agent_id=agent_id,
-                source_id=source_id,
-                point_id=request.point_id,
+                tenant_code=tenant_code,
+                asset_code=asset_code,
+                agent_code=agent_code,
+                source_code=source_code,
+                point_code=point_code,
                 point_key=request.point_key,
                 point_ref=request.point_ref,
                 name=request.name,
@@ -92,12 +97,16 @@ async def list_points(
     source_id: str,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> list[PointResponse]:
+    tenant_code = tenant_id
+    asset_code = asset_id
+    agent_code = agent_id
+    source_code = source_id
     try:
         points = await ListPoints(unit_of_work_factory()).execute(
-            tenant_id,
-            asset_id,
-            agent_id,
-            source_id,
+            tenant_code,
+            asset_code,
+            agent_code,
+            source_code,
         )
     except SourceNotFoundError as exc:
         raise HTTPException(
@@ -119,14 +128,19 @@ async def delete_point(
     point_id: str,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> None:
+    tenant_code = tenant_id
+    asset_code = asset_id
+    agent_code = agent_id
+    source_code = source_id
+    point_code = point_id
     try:
         await DeletePoint(unit_of_work_factory()).execute(
             DeletePointCommand(
-                tenant_id=tenant_id,
-                asset_id=asset_id,
-                agent_id=agent_id,
-                source_id=source_id,
-                point_id=point_id,
+                tenant_code=tenant_code,
+                asset_code=asset_code,
+                agent_code=agent_code,
+                source_code=source_code,
+                point_code=point_code,
             )
         )
     except PointNotFoundError as exc:

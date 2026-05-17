@@ -9,6 +9,16 @@
 и не означают, что config backend должен расширяться до Web Monitoring или Alarm
 Management API без отдельного решения.
 
+Примечание 2026-05-17: физическая PostgreSQL-схема из разделов ниже
+сохранена как исторический baseline и переопределена реализацией issue 18.
+Актуальная схема `Config Registry` использует internal `id uuid primary key`,
+UUID foreign keys и public code columns `tenant_code`, `asset_code`,
+`agent_code`, `source_code`, `point_code`. Публичные wire/API identifiers
+`tenant_id`, `asset_id`, `agent_id`, `source_id`, `point_id` остаются
+контрактной поверхностью HTTP/Kafka/MQTT. Текущий source of truth:
+[Config Registry README](../../../../apps/idp_config_registry/README.md) и
+[Runtime и Source Config Revisions](../../../contracts/edge-telemetry-agent/config-revision-model.md).
+
 ## Контекст
 
 Следующий backend-инкремент нужен не для всей `Monitoring & Alarm Platform`

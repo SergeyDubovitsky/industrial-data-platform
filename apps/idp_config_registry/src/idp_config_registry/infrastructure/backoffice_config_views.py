@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from uuid import uuid4
+
 from starlette.requests import Request
 from wtforms import StringField
 
@@ -49,8 +51,8 @@ class AgentRuntimeConfigRevisionBackofficeView(
     category = "Config Revisions"
     column_list = model_columns(
         AgentRuntimeConfigRevisionModel,
-        "tenant_id",
-        "agent_id",
+        "tenant_code",
+        "agent_code",
         "config_revision",
         "status",
         "issued_at",
@@ -89,9 +91,9 @@ class AgentRuntimeConfigRevisionBackofficeView(
             get_request_state(request).unit_of_work_factory()
         ).execute(
             CreateAgentRuntimeConfigRevisionCommand(
-                tenant_id=selection.tenant_id,
-                asset_id=selection.asset_id,
-                agent_id=selection.agent_id,
+                tenant_code=selection.tenant_code,
+                asset_code=selection.asset_code,
+                agent_code=selection.agent_code,
                 config_revision=str(data["config_revision"]),
                 issued_at=parse_issued_at(data.get("issued_at")),
                 agent_runtime_payload_json=json_object(
@@ -112,8 +114,8 @@ class SourceConfigRevisionBackofficeView(
     category = "Config Revisions"
     column_list = model_columns(
         SourceConfigRevisionModel,
-        "tenant_id",
-        "source_id",
+        "tenant_code",
+        "source_code",
         "source_config_revision",
         "config_revision",
         "status",
@@ -155,10 +157,10 @@ class SourceConfigRevisionBackofficeView(
             get_request_state(request).unit_of_work_factory()
         ).execute(
             CreateSourceConfigRevisionCommand(
-                tenant_id=selection.tenant_id,
-                asset_id=selection.asset_id,
-                agent_id=selection.agent_id,
-                source_id=selection.source_id,
+                tenant_code=selection.tenant_code,
+                asset_code=selection.asset_code,
+                agent_code=selection.agent_code,
+                source_code=selection.source_code,
                 source_config_revision=str(data["source_config_revision"]),
                 config_revision=str(data["config_revision"]),
                 issued_at=parse_issued_at(data.get("issued_at")),
@@ -178,12 +180,12 @@ class ConfigOutboxBackofficeView(ReadOnlyBackofficeModelView, model=ConfigOutbox
     column_list = model_columns(
         ConfigOutboxModel,
         "status",
-        "tenant_id",
-        "agent_id",
+        "tenant_code",
+        "agent_code",
         "config_revision",
         "config_scope",
         "message_type",
-        "source_id",
+        "source_code",
         "attempt_count",
         "updated_at",
     )
@@ -194,9 +196,13 @@ def _agent_runtime_config_revision_model(
     revision: AgentRuntimeConfigRevision,
 ) -> AgentRuntimeConfigRevisionModel:
     return AgentRuntimeConfigRevisionModel(
-        tenant_id=revision.tenant_id,
-        asset_id=revision.asset_id,
-        agent_id=revision.agent_id,
+        id=uuid4(),
+        tenant_id=uuid4(),
+        asset_id=uuid4(),
+        agent_id=uuid4(),
+        tenant_code=revision.tenant_code,
+        asset_code=revision.asset_code,
+        agent_code=revision.agent_code,
         config_revision=revision.config_revision,
         status=revision.status.value,
         issued_at=revision.issued_at,
@@ -209,10 +215,16 @@ def _source_config_revision_model(
     revision: SourceConfigRevision,
 ) -> SourceConfigRevisionModel:
     return SourceConfigRevisionModel(
-        tenant_id=revision.tenant_id,
-        asset_id=revision.asset_id,
-        agent_id=revision.agent_id,
-        source_id=revision.source_id,
+        id=uuid4(),
+        tenant_id=uuid4(),
+        asset_id=uuid4(),
+        agent_id=uuid4(),
+        source_id=uuid4(),
+        agent_runtime_config_revision_id=uuid4(),
+        tenant_code=revision.tenant_code,
+        asset_code=revision.asset_code,
+        agent_code=revision.agent_code,
+        source_code=revision.source_code,
         source_config_revision=revision.source_config_revision,
         config_revision=revision.config_revision,
         status=revision.status.value,

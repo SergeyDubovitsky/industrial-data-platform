@@ -51,11 +51,11 @@ class PointResponse(BaseModel):
     @classmethod
     def from_domain(cls, point: Point) -> PointResponse:
         return cls(
-            tenant_id=point.tenant_id,
-            asset_id=point.asset_id,
-            agent_id=point.agent_id,
-            source_id=point.source_id,
-            point_id=point.point_id,
+            tenant_id=point.tenant_code,
+            asset_id=point.asset_code,
+            agent_id=point.agent_code,
+            source_id=point.source_code,
+            point_id=point.point_code,
             point_key=point.point_key,
             point_ref=point.point_ref,
             name=point.name,

@@ -25,7 +25,7 @@ class TenantResponse(BaseModel):
     @classmethod
     def from_domain(cls, tenant: Tenant) -> TenantResponse:
         return cls(
-            tenant_id=tenant.tenant_id,
+            tenant_id=tenant.tenant_code,
             name=tenant.name,
             status=tenant.status,
             created_at=tenant.created_at,

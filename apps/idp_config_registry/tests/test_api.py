@@ -286,21 +286,21 @@ def test_delete_point_removes_existing_point() -> None:
 def test_delete_point_rejects_point_id_outside_url_scope() -> None:
     client = TestClient(create_app())
     client.post("/tenants", json={"tenant_id": "tenant-a", "name": "Tenant A"})
-    for asset_id, agent_id, source_id in (
+    for asset_code, agent_code, source_code in (
         ("asset-a", "agent-a", "knx-main"),
         ("asset-b", "agent-b", "knx-secondary"),
     ):
         client.post(
             "/tenants/tenant-a/assets",
-            json={"asset_id": asset_id, "name": asset_id},
+            json={"asset_id": asset_code, "name": asset_code},
         )
         client.post(
-            f"/tenants/tenant-a/assets/{asset_id}/agents",
-            json={"agent_id": agent_id},
+            f"/tenants/tenant-a/assets/{asset_code}/agents",
+            json={"agent_id": agent_code},
         )
         client.post(
-            f"/tenants/tenant-a/assets/{asset_id}/agents/{agent_id}/sources",
-            json={"source_id": source_id, "source_type": "knx"},
+            f"/tenants/tenant-a/assets/{asset_code}/agents/{agent_code}/sources",
+            json={"source_id": source_code, "source_type": "knx"},
         )
     client.post(
         "/tenants/tenant-a/assets/asset-a/agents/agent-a/sources/knx-main/points",

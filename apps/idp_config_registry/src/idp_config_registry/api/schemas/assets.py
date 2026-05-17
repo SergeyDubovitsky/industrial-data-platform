@@ -28,8 +28,8 @@ class AssetResponse(BaseModel):
     @classmethod
     def from_domain(cls, asset: Asset) -> AssetResponse:
         return cls(
-            tenant_id=asset.tenant_id,
-            asset_id=asset.asset_id,
+            tenant_id=asset.tenant_code,
+            asset_id=asset.asset_code,
             name=asset.name,
             description=asset.description,
             status=asset.status,

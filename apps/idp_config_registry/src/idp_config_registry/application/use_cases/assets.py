@@ -15,16 +15,16 @@ from idp_config_registry.domain.value_objects import AssetStatus
 
 @dataclass(frozen=True)
 class CreateAssetCommand:
-    tenant_id: str
-    asset_id: str
+    tenant_code: str
+    asset_code: str
     name: str
     description: str | None = None
 
 
 @dataclass(frozen=True)
 class UpdateAssetCommand:
-    tenant_id: str
-    asset_id: str
+    tenant_code: str
+    asset_code: str
     name: str
     description: str | None
     status: AssetStatus
@@ -32,8 +32,8 @@ class UpdateAssetCommand:
 
 @dataclass(frozen=True)
 class DeleteAssetCommand:
-    tenant_id: str
-    asset_id: str
+    tenant_code: str
+    asset_code: str
 
 
 class CreateAsset:
@@ -42,17 +42,17 @@ class CreateAsset:
 
     async def execute(self, command: CreateAssetCommand) -> Asset:
         asset = Asset(
-            tenant_id=command.tenant_id,
-            asset_id=command.asset_id,
+            tenant_code=command.tenant_code,
+            asset_code=command.asset_code,
             name=command.name,
             description=command.description,
         )
 
         async with self._unit_of_work as unit_of_work:
-            if await unit_of_work.tenants.get(asset.tenant_id) is None:
-                raise TenantNotFoundError(asset.tenant_id)
-            if await unit_of_work.assets.get(asset.tenant_id, asset.asset_id) is not None:
-                raise DuplicateAssetError(asset.tenant_id, asset.asset_id)
+            if await unit_of_work.tenants.get(asset.tenant_code) is None:
+                raise TenantNotFoundError(asset.tenant_code)
+            if await unit_of_work.assets.get(asset.tenant_code, asset.asset_code) is not None:
+                raise DuplicateAssetError(asset.tenant_code, asset.asset_code)
             await unit_of_work.assets.add(asset)
             await unit_of_work.commit()
 
@@ -66,11 +66,11 @@ class UpdateAsset:
     async def execute(self, command: UpdateAssetCommand) -> Asset:
         async with self._unit_of_work as unit_of_work:
             existing = await unit_of_work.assets.get(
-                command.tenant_id,
-                command.asset_id,
+                command.tenant_code,
+                command.asset_code,
             )
             if existing is None:
-                raise AssetNotFoundError(command.tenant_id, command.asset_id)
+                raise AssetNotFoundError(command.tenant_code, command.asset_code)
             asset = replace(
                 existing,
                 name=command.name,
@@ -90,17 +90,17 @@ class DeleteAsset:
     async def execute(self, command: DeleteAssetCommand) -> None:
         async with self._unit_of_work as unit_of_work:
             existing = await unit_of_work.assets.get(
-                command.tenant_id,
-                command.asset_id,
+                command.tenant_code,
+                command.asset_code,
             )
             if existing is None:
-                raise AssetNotFoundError(command.tenant_id, command.asset_id)
+                raise AssetNotFoundError(command.tenant_code, command.asset_code)
             if await unit_of_work.agents.list_for_asset(
-                command.tenant_id,
-                command.asset_id,
+                command.tenant_code,
+                command.asset_code,
             ):
-                raise AssetHasAgentsError(command.tenant_id, command.asset_id)
-            await unit_of_work.assets.delete(command.tenant_id, command.asset_id)
+                raise AssetHasAgentsError(command.tenant_code, command.asset_code)
+            await unit_of_work.assets.delete(command.tenant_code, command.asset_code)
             await unit_of_work.commit()
 
 
@@ -108,8 +108,8 @@ class ListAssets:
     def __init__(self, unit_of_work: UnitOfWork) -> None:
         self._unit_of_work = unit_of_work
 
-    async def execute(self, tenant_id: str) -> list[Asset]:
+    async def execute(self, tenant_code: str) -> list[Asset]:
         async with self._unit_of_work as unit_of_work:
-            if await unit_of_work.tenants.get(tenant_id) is None:
-                raise TenantNotFoundError(tenant_id)
-            return await unit_of_work.assets.list_for_tenant(tenant_id)
+            if await unit_of_work.tenants.get(tenant_code) is None:
+                raise TenantNotFoundError(tenant_code)
+            return await unit_of_work.assets.list_for_tenant(tenant_code)

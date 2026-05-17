@@ -23,19 +23,19 @@ class InMemoryTenantRepository:
     _items: dict[str, Tenant] = field(default_factory=dict)
 
     async def add(self, tenant: Tenant) -> None:
-        self._items[tenant.tenant_id] = tenant
+        self._items[tenant.tenant_code] = tenant
 
-    async def get(self, tenant_id: str) -> Tenant | None:
-        return self._items.get(tenant_id)
+    async def get(self, tenant_code: str) -> Tenant | None:
+        return self._items.get(tenant_code)
 
     async def update(self, tenant: Tenant) -> None:
-        self._items[tenant.tenant_id] = tenant
+        self._items[tenant.tenant_code] = tenant
 
-    async def delete(self, tenant_id: str) -> None:
-        self._items.pop(tenant_id, None)
+    async def delete(self, tenant_code: str) -> None:
+        self._items.pop(tenant_code, None)
 
     async def list(self) -> list[Tenant]:
-        return sorted(self._items.values(), key=lambda tenant: tenant.tenant_id)
+        return sorted(self._items.values(), key=lambda tenant: tenant.tenant_code)
 
 
 @dataclass
@@ -43,25 +43,25 @@ class InMemoryAssetRepository:
     _items: dict[tuple[str, str], Asset] = field(default_factory=dict)
 
     async def add(self, asset: Asset) -> None:
-        self._items[(asset.tenant_id, asset.asset_id)] = asset
+        self._items[(asset.tenant_code, asset.asset_code)] = asset
 
-    async def get(self, tenant_id: str, asset_id: str) -> Asset | None:
-        return self._items.get((tenant_id, asset_id))
+    async def get(self, tenant_code: str, asset_code: str) -> Asset | None:
+        return self._items.get((tenant_code, asset_code))
 
     async def update(self, asset: Asset) -> None:
-        self._items[(asset.tenant_id, asset.asset_id)] = asset
+        self._items[(asset.tenant_code, asset.asset_code)] = asset
 
-    async def delete(self, tenant_id: str, asset_id: str) -> None:
-        self._items.pop((tenant_id, asset_id), None)
+    async def delete(self, tenant_code: str, asset_code: str) -> None:
+        self._items.pop((tenant_code, asset_code), None)
 
-    async def list_for_tenant(self, tenant_id: str) -> list[Asset]:
+    async def list_for_tenant(self, tenant_code: str) -> list[Asset]:
         return sorted(
             (
                 asset
                 for (asset_tenant_id, _), asset in self._items.items()
-                if asset_tenant_id == tenant_id
+                if asset_tenant_id == tenant_code
             ),
-            key=lambda asset: asset.asset_id,
+            key=lambda asset: asset.asset_code,
         )
 
 
@@ -70,25 +70,25 @@ class InMemoryAgentRepository:
     _items: dict[tuple[str, str, str], Agent] = field(default_factory=dict)
 
     async def add(self, agent: Agent) -> None:
-        self._items[(agent.tenant_id, agent.asset_id, agent.agent_id)] = agent
+        self._items[(agent.tenant_code, agent.asset_code, agent.agent_code)] = agent
 
-    async def get(self, tenant_id: str, asset_id: str, agent_id: str) -> Agent | None:
-        return self._items.get((tenant_id, asset_id, agent_id))
+    async def get(self, tenant_code: str, asset_code: str, agent_code: str) -> Agent | None:
+        return self._items.get((tenant_code, asset_code, agent_code))
 
     async def update(self, agent: Agent) -> None:
-        self._items[(agent.tenant_id, agent.asset_id, agent.agent_id)] = agent
+        self._items[(agent.tenant_code, agent.asset_code, agent.agent_code)] = agent
 
-    async def delete(self, tenant_id: str, asset_id: str, agent_id: str) -> None:
-        self._items.pop((tenant_id, asset_id, agent_id), None)
+    async def delete(self, tenant_code: str, asset_code: str, agent_code: str) -> None:
+        self._items.pop((tenant_code, asset_code, agent_code), None)
 
-    async def list_for_asset(self, tenant_id: str, asset_id: str) -> list[Agent]:
+    async def list_for_asset(self, tenant_code: str, asset_code: str) -> list[Agent]:
         return sorted(
             (
                 agent
                 for (agent_tenant_id, agent_asset_id, _), agent in self._items.items()
-                if agent_tenant_id == tenant_id and agent_asset_id == asset_id
+                if agent_tenant_id == tenant_code and agent_asset_id == asset_code
             ),
-            key=lambda agent: agent.agent_id,
+            key=lambda agent: agent.agent_code,
         )
 
 
@@ -99,51 +99,51 @@ class InMemorySourceRepository:
     async def add(self, source: Source) -> None:
         self._items[
             (
-                source.tenant_id,
-                source.asset_id,
-                source.agent_id,
-                source.source_id,
+                source.tenant_code,
+                source.asset_code,
+                source.agent_code,
+                source.source_code,
             )
         ] = source
 
     async def get(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> Source | None:
-        return self._items.get((tenant_id, asset_id, agent_id, source_id))
+        return self._items.get((tenant_code, asset_code, agent_code, source_code))
 
     async def update(self, source: Source) -> None:
         self._items[
             (
-                source.tenant_id,
-                source.asset_id,
-                source.agent_id,
-                source.source_id,
+                source.tenant_code,
+                source.asset_code,
+                source.agent_code,
+                source.source_code,
             )
         ] = source
 
     async def delete(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> None:
-        self._items.pop((tenant_id, asset_id, agent_id, source_id), None)
+        self._items.pop((tenant_code, asset_code, agent_code, source_code), None)
 
     async def delete_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> int:
         keys = [
             key
             for key in self._items
-            if key[0] == tenant_id and key[1] == asset_id and key[2] == agent_id
+            if key[0] == tenant_code and key[1] == asset_code and key[2] == agent_code
         ]
         for key in keys:
             self._items.pop(key, None)
@@ -151,9 +151,9 @@ class InMemorySourceRepository:
 
     async def list_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> list[Source]:
         return sorted(
             (
@@ -164,11 +164,11 @@ class InMemorySourceRepository:
                     source_agent_id,
                     _,
                 ), source in self._items.items()
-                if source_tenant_id == tenant_id
-                and source_asset_id == asset_id
-                and source_agent_id == agent_id
+                if source_tenant_id == tenant_code
+                and source_asset_id == asset_code
+                and source_agent_id == agent_code
             ),
-            key=lambda source: source.source_id,
+            key=lambda source: source.source_code,
         )
 
 
@@ -177,29 +177,29 @@ class InMemoryPointRepository:
     _items: dict[tuple[str, str], Point] = field(default_factory=dict)
 
     async def add(self, point: Point) -> None:
-        self._items[(point.tenant_id, point.point_id)] = point
+        self._items[(point.tenant_code, point.point_code)] = point
 
-    async def get_by_id(self, tenant_id: str, point_id: str) -> Point | None:
-        return self._items.get((tenant_id, point_id))
+    async def get_by_id(self, tenant_code: str, point_code: str) -> Point | None:
+        return self._items.get((tenant_code, point_code))
 
     async def update(self, point: Point) -> None:
-        self._items[(point.tenant_id, point.point_id)] = point
+        self._items[(point.tenant_code, point.point_code)] = point
 
-    async def delete(self, tenant_id: str, point_id: str) -> None:
-        self._items.pop((tenant_id, point_id), None)
+    async def delete(self, tenant_code: str, point_code: str) -> None:
+        self._items.pop((tenant_code, point_code), None)
 
     async def delete_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> int:
         keys = [
             key
             for key, point in self._items.items()
-            if point.tenant_id == tenant_id
-            and point.asset_id == asset_id
-            and point.agent_id == agent_id
+            if point.tenant_code == tenant_code
+            and point.asset_code == asset_code
+            and point.agent_code == agent_code
         ]
         for key in keys:
             self._items.pop(key, None)
@@ -207,18 +207,18 @@ class InMemoryPointRepository:
 
     async def get_by_key(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
         point_key: str,
     ) -> Point | None:
         for point in self._items.values():
             if (
-                point.tenant_id == tenant_id
-                and point.asset_id == asset_id
-                and point.agent_id == agent_id
-                and point.source_id == source_id
+                point.tenant_code == tenant_code
+                and point.asset_code == asset_code
+                and point.agent_code == agent_code
+                and point.source_code == source_code
                 and point.point_key == point_key
             ):
                 return point
@@ -226,18 +226,18 @@ class InMemoryPointRepository:
 
     async def get_by_ref(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
         point_ref: str,
     ) -> Point | None:
         for point in self._items.values():
             if (
-                point.tenant_id == tenant_id
-                and point.asset_id == asset_id
-                and point.agent_id == agent_id
-                and point.source_id == source_id
+                point.tenant_code == tenant_code
+                and point.asset_code == asset_code
+                and point.agent_code == agent_code
+                and point.source_code == source_code
                 and point.point_ref == point_ref
             ):
                 return point
@@ -245,19 +245,19 @@ class InMemoryPointRepository:
 
     async def list_for_source(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> list[Point]:
         return sorted(
             (
                 point
                 for point in self._items.values()
-                if point.tenant_id == tenant_id
-                and point.asset_id == asset_id
-                and point.agent_id == agent_id
-                and point.source_id == source_id
+                if point.tenant_code == tenant_code
+                and point.asset_code == asset_code
+                and point.agent_code == agent_code
+                and point.source_code == source_code
             ),
             key=lambda point: point.point_key,
         )
@@ -272,47 +272,47 @@ class InMemoryAgentRuntimeConfigRevisionRepository:
     async def add(self, revision: AgentRuntimeConfigRevision) -> None:
         self._items[
             (
-                revision.tenant_id,
-                revision.asset_id,
-                revision.agent_id,
+                revision.tenant_code,
+                revision.asset_code,
+                revision.agent_code,
                 revision.config_revision,
             )
         ] = revision
 
     async def get(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
         config_revision: str,
     ) -> AgentRuntimeConfigRevision | None:
-        return self._items.get((tenant_id, asset_id, agent_id, config_revision))
+        return self._items.get((tenant_code, asset_code, agent_code, config_revision))
 
     async def has_any_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> bool:
         return any(
-            revision.tenant_id == tenant_id
-            and revision.asset_id == asset_id
-            and revision.agent_id == agent_id
+            revision.tenant_code == tenant_code
+            and revision.asset_code == asset_code
+            and revision.agent_code == agent_code
             for revision in self._items.values()
         )
 
     async def delete_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> int:
         keys = [
             key
             for key, revision in self._items.items()
-            if revision.tenant_id == tenant_id
-            and revision.asset_id == asset_id
-            and revision.agent_id == agent_id
+            if revision.tenant_code == tenant_code
+            and revision.asset_code == asset_code
+            and revision.agent_code == agent_code
         ]
         for key in keys:
             self._items.pop(key, None)
@@ -328,72 +328,72 @@ class InMemorySourceConfigRevisionRepository:
     async def add(self, revision: SourceConfigRevision) -> None:
         self._items[
             (
-                revision.tenant_id,
-                revision.asset_id,
-                revision.agent_id,
-                revision.source_id,
+                revision.tenant_code,
+                revision.asset_code,
+                revision.agent_code,
+                revision.source_code,
                 revision.source_config_revision,
             )
         ] = revision
 
     async def get(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
         source_config_revision: str,
     ) -> SourceConfigRevision | None:
         return self._items.get(
-            (tenant_id, asset_id, agent_id, source_id, source_config_revision)
+            (tenant_code, asset_code, agent_code, source_code, source_config_revision)
         )
 
     async def list_for_runtime_revision(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
         config_revision: str,
     ) -> list[SourceConfigRevision]:
         return sorted(
             (
                 revision
                 for revision in self._items.values()
-                if revision.tenant_id == tenant_id
-                and revision.asset_id == asset_id
-                and revision.agent_id == agent_id
+                if revision.tenant_code == tenant_code
+                and revision.asset_code == asset_code
+                and revision.agent_code == agent_code
                 and revision.config_revision == config_revision
             ),
-            key=lambda revision: revision.source_id,
+            key=lambda revision: revision.source_code,
         )
 
     async def has_any_for_source(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> bool:
         return any(
-            revision.tenant_id == tenant_id
-            and revision.asset_id == asset_id
-            and revision.agent_id == agent_id
-            and revision.source_id == source_id
+            revision.tenant_code == tenant_code
+            and revision.asset_code == asset_code
+            and revision.agent_code == agent_code
+            and revision.source_code == source_code
             for revision in self._items.values()
         )
 
     async def delete_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> int:
         keys = [
             key
             for key, revision in self._items.items()
-            if revision.tenant_id == tenant_id
-            and revision.asset_id == asset_id
-            and revision.agent_id == agent_id
+            if revision.tenant_code == tenant_code
+            and revision.asset_code == asset_code
+            and revision.agent_code == agent_code
         ]
         for key in keys:
             self._items.pop(key, None)
@@ -415,18 +415,18 @@ class InMemoryConfigOutboxRepository:
 
     async def list_for_config_revision(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
         config_revision: str,
     ) -> list[ConfigOutboxRecord]:
         return sorted(
             (
                 record
                 for record in self._items.values()
-                if record.tenant_id == tenant_id
-                and record.asset_id == asset_id
-                and record.agent_id == agent_id
+                if record.tenant_code == tenant_code
+                and record.asset_code == asset_code
+                and record.agent_code == agent_code
                 and record.config_revision == config_revision
             ),
             key=lambda record: record.config_scope,
@@ -434,29 +434,29 @@ class InMemoryConfigOutboxRepository:
 
     async def has_any_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> bool:
         return any(
-            record.tenant_id == tenant_id
-            and record.asset_id == asset_id
-            and record.agent_id == agent_id
+            record.tenant_code == tenant_code
+            and record.asset_code == asset_code
+            and record.agent_code == agent_code
             for record in self._items.values()
         )
 
     async def delete_for_agent(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> int:
         keys = [
             key
             for key, record in self._items.items()
-            if record.tenant_id == tenant_id
-            and record.asset_id == asset_id
-            and record.agent_id == agent_id
+            if record.tenant_code == tenant_code
+            and record.asset_code == asset_code
+            and record.agent_code == agent_code
         ]
         for key in keys:
             self._items.pop(key, None)
@@ -464,16 +464,16 @@ class InMemoryConfigOutboxRepository:
 
     async def has_any_for_source(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> bool:
         return any(
-            record.tenant_id == tenant_id
-            and record.asset_id == asset_id
-            and record.agent_id == agent_id
-            and record.source_id == source_id
+            record.tenant_code == tenant_code
+            and record.asset_code == asset_code
+            and record.agent_code == agent_code
+            and record.source_code == source_code
             for record in self._items.values()
         )
 

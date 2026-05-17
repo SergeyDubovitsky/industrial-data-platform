@@ -46,28 +46,28 @@ async def _create_tenant_asset_agent_and_source(
     unit_of_work_factory: InMemoryUnitOfWorkFactory,
 ) -> None:
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
     await CreateAsset(unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
             name="Asset A",
         )
     )
     await CreateAgent(unit_of_work_factory()).execute(
         CreateAgentCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
         )
     )
     await CreateSource(unit_of_work_factory()).execute(
         CreateSourceCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
-            source_id="knx-main",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
+            source_code="knx-main",
             source_type="knx",
         )
     )
@@ -75,16 +75,16 @@ async def _create_tenant_asset_agent_and_source(
 
 def _point_command(
     *,
-    point_id: str = "tenant-a|asset-a|knx-main|lights.main",
+    point_code: str = "tenant-a|asset-a|knx-main|lights.main",
     point_key: str = "lights.main",
     point_ref: str = "1/1/1",
 ) -> CreatePointCommand:
     return CreatePointCommand(
-        tenant_id="tenant-a",
-        asset_id="asset-a",
-        agent_id="agent-a",
-        source_id="knx-main",
-        point_id=point_id,
+        tenant_code="tenant-a",
+        asset_code="asset-a",
+        agent_code="agent-a",
+        source_code="knx-main",
+        point_code=point_code,
         point_key=point_key,
         point_ref=point_ref,
         name="Main Light",
@@ -138,7 +138,7 @@ async def test_create_point_rejects_duplicate_point_key_in_source() -> None:
     with pytest.raises(DuplicatePointError):
         await CreatePoint(unit_of_work_factory()).execute(
             _point_command(
-                point_id="tenant-a|asset-a|knx-main|lights.secondary",
+                point_code="tenant-a|asset-a|knx-main|lights.secondary",
                 point_ref="1/1/2",
             )
         )
@@ -152,7 +152,7 @@ async def test_create_point_rejects_duplicate_point_ref_in_source() -> None:
     with pytest.raises(DuplicatePointError):
         await CreatePoint(unit_of_work_factory()).execute(
             _point_command(
-                point_id="tenant-a|asset-a|knx-main|lights.secondary",
+                point_code="tenant-a|asset-a|knx-main|lights.secondary",
                 point_key="lights.secondary",
             )
         )
@@ -188,11 +188,11 @@ async def test_delete_point_rejects_matching_id_outside_requested_scope() -> Non
     with pytest.raises(PointNotFoundError):
         await DeletePoint(unit_of_work_factory()).execute(
             DeletePointCommand(
-                tenant_id="tenant-a",
-                asset_id="other-asset",
-                agent_id="agent-a",
-                source_id="knx-main",
-                point_id="tenant-a|asset-a|knx-main|lights.main",
+                tenant_code="tenant-a",
+                asset_code="other-asset",
+                agent_code="agent-a",
+                source_code="knx-main",
+                point_code="tenant-a|asset-a|knx-main|lights.main",
             )
         )
 
@@ -202,6 +202,6 @@ async def test_delete_point_rejects_matching_id_outside_requested_scope() -> Non
         "agent-a",
         "knx-main",
     )
-    assert [point.point_id for point in points] == [
+    assert [point.point_code for point in points] == [
         "tenant-a|asset-a|knx-main|lights.main"
     ]

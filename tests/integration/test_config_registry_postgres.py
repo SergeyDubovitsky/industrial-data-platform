@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from idp_config_registry.application.use_cases.config_outbox import (
     MarkConfigOutboxPublished,
@@ -21,6 +22,7 @@ from idp_config_registry.domain.value_objects import ConfigOutboxStatus
 from idp_config_registry.infrastructure.json_schema_validator import (
     JsonSchemaConfigPayloadValidator,
 )
+from idp_config_registry.infrastructure.postgres.database import create_engine
 from idp_config_registry.infrastructure.postgres.unit_of_work import (
     PostgresUnitOfWorkFactory,
 )
@@ -30,6 +32,165 @@ from idp_config_registry.settings import ConfigRegistrySettings
 pytestmark = pytest.mark.integration
 
 CONTRACT_DIR = Path("docs/contracts/edge-telemetry-agent/schemas")
+
+
+@pytest.mark.asyncio
+async def test_config_registry_postgres_schema_uses_internal_uuid_keys(
+    local_config_registry_postgres_stack,
+) -> None:
+    engine = create_engine(local_config_registry_postgres_stack.database_url)
+    try:
+        async with engine.connect() as connection:
+            columns = {
+                table: await _load_column_types(connection, table)
+                for table in (
+                    "tenants",
+                    "assets",
+                    "agents",
+                    "sources",
+                    "points",
+                )
+            }
+            primary_keys = {
+                table: await _load_primary_key_columns(connection, table)
+                for table in columns
+            }
+            foreign_keys = await _load_foreign_key_edges(
+                connection,
+                (
+                    "assets",
+                    "agents",
+                    "sources",
+                    "points",
+                ),
+            )
+    finally:
+        await engine.dispose()
+
+    expected_code_columns = {
+        "tenants": "tenant_code",
+        "assets": "asset_code",
+        "agents": "agent_code",
+        "sources": "source_code",
+        "points": "point_code",
+    }
+
+    for table, table_columns in columns.items():
+        assert table_columns["id"] == "uuid"
+        assert primary_keys[table] == ("id",)
+        assert table_columns[expected_code_columns[table]] == "text"
+        assert "code" not in table_columns
+
+    assert "tenant_id" not in columns["tenants"]
+    assert "asset_id" not in columns["assets"]
+    assert "agent_id" not in columns["agents"]
+    assert "source_id" not in columns["sources"]
+    assert "point_id" not in columns["points"]
+
+    assert columns["assets"]["tenant_id"] == "uuid"
+    assert columns["agents"]["tenant_id"] == "uuid"
+    assert columns["agents"]["asset_id"] == "uuid"
+    assert columns["sources"]["tenant_id"] == "uuid"
+    assert columns["sources"]["agent_id"] == "uuid"
+    assert columns["points"]["tenant_id"] == "uuid"
+    assert columns["points"]["source_id"] == "uuid"
+
+    assert ("assets", "tenant_id", "tenants", "id") in foreign_keys
+    assert ("agents", "tenant_id", "tenants", "id") in foreign_keys
+    assert ("agents", "asset_id", "assets", "id") in foreign_keys
+    assert ("sources", "tenant_id", "tenants", "id") in foreign_keys
+    assert ("sources", "agent_id", "agents", "id") in foreign_keys
+    assert ("points", "tenant_id", "tenants", "id") in foreign_keys
+    assert ("points", "source_id", "sources", "id") in foreign_keys
+
+
+async def _load_column_types(connection: object, table_name: str) -> dict[str, str]:
+    result = await connection.execute(
+        text(
+            """
+            select
+                a.attname as column_name,
+                pg_catalog.format_type(a.atttypid, a.atttypmod) as data_type
+            from pg_catalog.pg_attribute a
+            join pg_catalog.pg_class c on c.oid = a.attrelid
+            join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+            where n.nspname = 'public'
+              and c.relname = :table_name
+              and a.attnum > 0
+              and not a.attisdropped
+            order by a.attnum
+            """
+        ),
+        {"table_name": table_name},
+    )
+    return {str(row.column_name): str(row.data_type) for row in result}
+
+
+async def _load_primary_key_columns(
+    connection: object,
+    table_name: str,
+) -> tuple[str, ...]:
+    result = await connection.execute(
+        text(
+            """
+            select a.attname as column_name
+            from pg_catalog.pg_constraint con
+            join pg_catalog.pg_class c on c.oid = con.conrelid
+            join pg_catalog.pg_namespace n on n.oid = c.relnamespace
+            join unnest(con.conkey) with ordinality key(attnum, ord)
+                on true
+            join pg_catalog.pg_attribute a
+                on a.attrelid = con.conrelid
+               and a.attnum = key.attnum
+            where n.nspname = 'public'
+              and c.relname = :table_name
+              and con.contype = 'p'
+            order by key.ord
+            """
+        ),
+        {"table_name": table_name},
+    )
+    return tuple(str(row.column_name) for row in result)
+
+
+async def _load_foreign_key_edges(
+    connection: object,
+    table_names: tuple[str, ...],
+) -> set[tuple[str, str, str, str]]:
+    result = await connection.execute(
+        text(
+            """
+            select
+                source_table.relname as source_table,
+                source_column.attname as source_column,
+                target_table.relname as target_table,
+                target_column.attname as target_column
+            from pg_catalog.pg_constraint con
+            join pg_catalog.pg_class source_table on source_table.oid = con.conrelid
+            join pg_catalog.pg_class target_table on target_table.oid = con.confrelid
+            join unnest(con.conkey, con.confkey) as key(source_attnum, target_attnum)
+                on true
+            join pg_catalog.pg_attribute source_column
+                on source_column.attrelid = con.conrelid
+               and source_column.attnum = key.source_attnum
+            join pg_catalog.pg_attribute target_column
+                on target_column.attrelid = con.confrelid
+               and target_column.attnum = key.target_attnum
+            where con.contype = 'f'
+              and source_table.relname = any(:table_names)
+            """
+        ),
+        {"table_names": list(table_names)},
+    )
+    return {
+        (
+            str(row.source_table),
+            str(row.source_column),
+            str(row.target_table),
+            str(row.target_column),
+        )
+        for row in result
+    }
 
 
 @pytest.mark.integration_smoke
@@ -265,9 +426,9 @@ async def test_config_registry_persists_and_reserves_outbox_records_in_postgres(
             validator,
         ).execute(
             RenderAgentRuntimeConfigCommand(
-                tenant_id="tenant-outbox",
-                asset_id="asset-a",
-                agent_id="agent-a",
+                tenant_code="tenant-outbox",
+                asset_code="asset-a",
+                agent_code="agent-a",
                 config_revision="rev-outbox-001",
                 issued_at=datetime(2026, 5, 3, 10, 0, tzinfo=UTC),
                 source_config_revisions={"knx-main": "rev-outbox-001-knx-main"},

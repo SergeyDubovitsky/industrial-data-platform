@@ -20,17 +20,17 @@ async def test_create_tenant_persists_entity_and_commits_unit_of_work() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
 
     tenant = await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
     tenants = await ListTenants(unit_of_work_factory()).execute()
 
-    assert tenant.tenant_id == "tenant-a"
+    assert tenant.tenant_code == "tenant-a"
     assert tenants == [tenant]
 
 
 async def test_create_tenant_rejects_duplicate_id() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
-    command = CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+    command = CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
 
     await CreateTenant(unit_of_work_factory()).execute(command)
     with pytest.raises(DuplicateTenantError):
@@ -42,5 +42,5 @@ async def test_create_tenant_rejects_blank_name() -> None:
 
     with pytest.raises(DomainValidationError):
         await CreateTenant(unit_of_work_factory()).execute(
-            CreateTenantCommand(tenant_id="tenant-a", name=" ")
+            CreateTenantCommand(tenant_code="tenant-a", name=" ")
         )

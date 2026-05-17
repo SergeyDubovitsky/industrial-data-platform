@@ -35,20 +35,20 @@ async def _create_tenant_asset_and_agent(
     unit_of_work_factory: InMemoryUnitOfWorkFactory,
 ) -> None:
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
     await CreateAsset(unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
             name="Asset A",
         )
     )
     await CreateAgent(unit_of_work_factory()).execute(
         CreateAgentCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
         )
     )
 
@@ -59,10 +59,10 @@ async def test_create_source_persists_entity_under_existing_agent() -> None:
 
     source = await CreateSource(unit_of_work_factory()).execute(
         CreateSourceCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
-            source_id="knx-main",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
+            source_code="knx-main",
             source_type="knx",
             name="Main KNX Line",
             connection_json={"gateway": "127.0.0.1"},
@@ -74,7 +74,7 @@ async def test_create_source_persists_entity_under_existing_agent() -> None:
         "agent-a",
     )
 
-    assert source.source_id == "knx-main"
+    assert source.source_code == "knx-main"
     assert source.connection_json == {"gateway": "127.0.0.1"}
     assert sources == [source]
 
@@ -85,10 +85,10 @@ async def test_create_source_rejects_missing_agent() -> None:
     with pytest.raises(AgentNotFoundError):
         await CreateSource(unit_of_work_factory()).execute(
             CreateSourceCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="agent-a",
-                source_id="knx-main",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="agent-a",
+                source_code="knx-main",
                 source_type="knx",
             )
         )
@@ -98,10 +98,10 @@ async def test_create_source_rejects_duplicate_source_id_in_agent() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
     await _create_tenant_asset_and_agent(unit_of_work_factory)
     command = CreateSourceCommand(
-        tenant_id="tenant-a",
-        asset_id="asset-a",
-        agent_id="agent-a",
-        source_id="knx-main",
+        tenant_code="tenant-a",
+        asset_code="asset-a",
+        agent_code="agent-a",
+        source_code="knx-main",
         source_type="knx",
     )
 
@@ -117,10 +117,10 @@ async def test_create_source_rejects_invalid_source_id() -> None:
     with pytest.raises(DomainValidationError):
         await CreateSource(unit_of_work_factory()).execute(
             CreateSourceCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="agent-a",
-                source_id="KNX Main",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="agent-a",
+                source_code="KNX Main",
                 source_type="knx",
             )
         )

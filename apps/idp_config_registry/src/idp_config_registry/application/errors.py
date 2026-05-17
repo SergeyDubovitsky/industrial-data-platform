@@ -6,163 +6,163 @@ class ApplicationError(RuntimeError):
 
 
 class DuplicateTenantError(ApplicationError):
-    def __init__(self, tenant_id: str) -> None:
-        super().__init__(f"Tenant {tenant_id!r} already exists")
-        self.tenant_id = tenant_id
+    def __init__(self, tenant_code: str) -> None:
+        super().__init__(f"Tenant {tenant_code!r} already exists")
+        self.tenant_code = tenant_code
 
 
 class TenantNotFoundError(ApplicationError):
-    def __init__(self, tenant_id: str) -> None:
-        super().__init__(f"Tenant {tenant_id!r} does not exist")
-        self.tenant_id = tenant_id
+    def __init__(self, tenant_code: str) -> None:
+        super().__init__(f"Tenant {tenant_code!r} does not exist")
+        self.tenant_code = tenant_code
 
 
 class TenantHasAssetsError(ApplicationError):
-    def __init__(self, tenant_id: str) -> None:
-        super().__init__(f"Tenant {tenant_id!r} cannot be deleted while it still has assets")
-        self.tenant_id = tenant_id
+    def __init__(self, tenant_code: str) -> None:
+        super().__init__(f"Tenant {tenant_code!r} cannot be deleted while it still has assets")
+        self.tenant_code = tenant_code
 
 
 class DuplicateAssetError(ApplicationError):
-    def __init__(self, tenant_id: str, asset_id: str) -> None:
-        super().__init__(f"Asset {asset_id!r} already exists for tenant {tenant_id!r}")
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
+    def __init__(self, tenant_code: str, asset_code: str) -> None:
+        super().__init__(f"Asset {asset_code!r} already exists for tenant {tenant_code!r}")
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
 
 
 class AssetNotFoundError(ApplicationError):
-    def __init__(self, tenant_id: str, asset_id: str) -> None:
-        super().__init__(f"Asset {asset_id!r} does not exist for tenant {tenant_id!r}")
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
+    def __init__(self, tenant_code: str, asset_code: str) -> None:
+        super().__init__(f"Asset {asset_code!r} does not exist for tenant {tenant_code!r}")
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
 
 
 class AssetHasAgentsError(ApplicationError):
-    def __init__(self, tenant_id: str, asset_id: str) -> None:
+    def __init__(self, tenant_code: str, asset_code: str) -> None:
         super().__init__(
-            f"Asset {asset_id!r} cannot be deleted while it still has agents "
-            f"in tenant {tenant_id!r}"
+            f"Asset {asset_code!r} cannot be deleted while it still has agents "
+            f"in tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
 
 
 class DuplicateAgentError(ApplicationError):
-    def __init__(self, tenant_id: str, asset_id: str, agent_id: str) -> None:
+    def __init__(self, tenant_code: str, asset_code: str, agent_code: str) -> None:
         super().__init__(
-            f"Agent {agent_id!r} already exists for asset {asset_id!r} "
-            f"in tenant {tenant_id!r}"
+            f"Agent {agent_code!r} already exists for asset {asset_code!r} "
+            f"in tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
 
 
 class AgentNotFoundError(ApplicationError):
-    def __init__(self, tenant_id: str, asset_id: str, agent_id: str) -> None:
+    def __init__(self, tenant_code: str, asset_code: str, agent_code: str) -> None:
         super().__init__(
-            f"Agent {agent_id!r} does not exist for asset {asset_id!r} "
-            f"in tenant {tenant_id!r}"
+            f"Agent {agent_code!r} does not exist for asset {asset_code!r} "
+            f"in tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
 
 
 class AgentHasChildrenError(ApplicationError):
     def __init__(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
         *,
         reason: str,
     ) -> None:
         super().__init__(
-            f"Agent {agent_id!r} cannot be deleted for asset {asset_id!r} "
-            f"in tenant {tenant_id!r}: {reason}"
+            f"Agent {agent_code!r} cannot be deleted for asset {asset_code!r} "
+            f"in tenant {tenant_code!r}: {reason}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
         self.reason = reason
 
 
 class DuplicateSourceError(ApplicationError):
     def __init__(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> None:
         super().__init__(
-            f"Source {source_id!r} already exists for agent {agent_id!r} "
-            f"in asset {asset_id!r} and tenant {tenant_id!r}"
+            f"Source {source_code!r} already exists for agent {agent_code!r} "
+            f"in asset {asset_code!r} and tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
-        self.source_id = source_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
+        self.source_code = source_code
 
 
 class SourceNotFoundError(ApplicationError):
     def __init__(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> None:
         super().__init__(
-            f"Source {source_id!r} does not exist for agent {agent_id!r} "
-            f"in asset {asset_id!r} and tenant {tenant_id!r}"
+            f"Source {source_code!r} does not exist for agent {agent_code!r} "
+            f"in asset {asset_code!r} and tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
-        self.source_id = source_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
+        self.source_code = source_code
 
 
 class SourceHasChildrenError(ApplicationError):
     def __init__(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
         *,
         reason: str,
     ) -> None:
         super().__init__(
-            f"Source {source_id!r} cannot be deleted for agent {agent_id!r} "
-            f"in asset {asset_id!r} and tenant {tenant_id!r}: {reason}"
+            f"Source {source_code!r} cannot be deleted for agent {agent_code!r} "
+            f"in asset {asset_code!r} and tenant {tenant_code!r}: {reason}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
-        self.source_id = source_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
+        self.source_code = source_code
         self.reason = reason
 
 
 class DuplicatePointError(ApplicationError):
-    def __init__(self, tenant_id: str, field_name: str, field_value: str) -> None:
+    def __init__(self, tenant_code: str, field_name: str, field_value: str) -> None:
         super().__init__(
             f"Point with {field_name} {field_value!r} already exists "
-            f"for tenant {tenant_id!r}"
+            f"for tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
+        self.tenant_code = tenant_code
         self.field_name = field_name
         self.field_value = field_value
 
 
 class PointNotFoundError(ApplicationError):
-    def __init__(self, tenant_id: str, point_id: str) -> None:
+    def __init__(self, tenant_code: str, point_code: str) -> None:
         super().__init__(
-            f"Point {point_id!r} does not exist for tenant {tenant_id!r}"
+            f"Point {point_code!r} does not exist for tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.point_id = point_id
+        self.tenant_code = tenant_code
+        self.point_code = point_code
 
 
 class ConfigRenderError(ApplicationError):
@@ -178,35 +178,35 @@ class ConfigPayloadValidationError(ConfigRenderError):
 
 
 class DuplicateConfigRevisionError(ApplicationError):
-    def __init__(self, tenant_id: str, asset_id: str, agent_id: str, revision: str) -> None:
+    def __init__(self, tenant_code: str, asset_code: str, agent_code: str, revision: str) -> None:
         super().__init__(
-            f"Config revision {revision!r} already exists for agent {agent_id!r} "
-            f"in asset {asset_id!r} and tenant {tenant_id!r}"
+            f"Config revision {revision!r} already exists for agent {agent_code!r} "
+            f"in asset {asset_code!r} and tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
         self.revision = revision
 
 
 class DuplicateSourceConfigRevisionError(ApplicationError):
     def __init__(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
         revision: str,
     ) -> None:
         super().__init__(
             f"Source config revision {revision!r} already exists for source "
-            f"{source_id!r} in agent {agent_id!r}, asset {asset_id!r}, "
-            f"tenant {tenant_id!r}"
+            f"{source_code!r} in agent {agent_code!r}, asset {asset_code!r}, "
+            f"tenant {tenant_code!r}"
         )
-        self.tenant_id = tenant_id
-        self.asset_id = asset_id
-        self.agent_id = agent_id
-        self.source_id = source_id
+        self.tenant_code = tenant_code
+        self.asset_code = asset_code
+        self.agent_code = agent_code
+        self.source_code = source_code
         self.revision = revision
 
 

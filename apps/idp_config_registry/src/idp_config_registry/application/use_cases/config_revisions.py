@@ -20,9 +20,9 @@ from idp_config_registry.domain.value_objects import ConfigRevisionStatus
 
 @dataclass(frozen=True)
 class CreateAgentRuntimeConfigRevisionCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
     config_revision: str
     issued_at: datetime
     agent_runtime_payload_json: dict[str, Any] = field(default_factory=dict)
@@ -38,9 +38,9 @@ class CreateAgentRuntimeConfigRevision:
         command: CreateAgentRuntimeConfigRevisionCommand,
     ) -> AgentRuntimeConfigRevision:
         revision = AgentRuntimeConfigRevision(
-            tenant_id=command.tenant_id,
-            asset_id=command.asset_id,
-            agent_id=command.agent_id,
+            tenant_code=command.tenant_code,
+            asset_code=command.asset_code,
+            agent_code=command.agent_code,
             config_revision=command.config_revision,
             issued_at=command.issued_at,
             agent_runtime_payload_json=dict(command.agent_runtime_payload_json),
@@ -50,30 +50,30 @@ class CreateAgentRuntimeConfigRevision:
         async with self._unit_of_work as unit_of_work:
             if (
                 await unit_of_work.agents.get(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
                 )
                 is None
             ):
                 raise AgentNotFoundError(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
                 )
             if (
                 await unit_of_work.agent_runtime_config_revisions.get(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
                     revision.config_revision,
                 )
                 is not None
             ):
                 raise DuplicateConfigRevisionError(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
                     revision.config_revision,
                 )
             await unit_of_work.agent_runtime_config_revisions.add(revision)
@@ -84,10 +84,10 @@ class CreateAgentRuntimeConfigRevision:
 
 @dataclass(frozen=True)
 class CreateSourceConfigRevisionCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
     source_config_revision: str
     config_revision: str
     issued_at: datetime
@@ -104,10 +104,10 @@ class CreateSourceConfigRevision:
         command: CreateSourceConfigRevisionCommand,
     ) -> SourceConfigRevision:
         revision = SourceConfigRevision(
-            tenant_id=command.tenant_id,
-            asset_id=command.asset_id,
-            agent_id=command.agent_id,
-            source_id=command.source_id,
+            tenant_code=command.tenant_code,
+            asset_code=command.asset_code,
+            agent_code=command.agent_code,
+            source_code=command.source_code,
             source_config_revision=command.source_config_revision,
             config_revision=command.config_revision,
             issued_at=command.issued_at,
@@ -118,34 +118,34 @@ class CreateSourceConfigRevision:
         async with self._unit_of_work as unit_of_work:
             if (
                 await unit_of_work.sources.get(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
-                    revision.source_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
+                    revision.source_code,
                 )
                 is None
             ):
                 raise SourceNotFoundError(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
-                    revision.source_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
+                    revision.source_code,
                 )
             if (
                 await unit_of_work.source_config_revisions.get(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
-                    revision.source_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
+                    revision.source_code,
                     revision.source_config_revision,
                 )
                 is not None
             ):
                 raise DuplicateSourceConfigRevisionError(
-                    revision.tenant_id,
-                    revision.asset_id,
-                    revision.agent_id,
-                    revision.source_id,
+                    revision.tenant_code,
+                    revision.asset_code,
+                    revision.agent_code,
+                    revision.source_code,
                     revision.source_config_revision,
                 )
             await unit_of_work.source_config_revisions.add(revision)

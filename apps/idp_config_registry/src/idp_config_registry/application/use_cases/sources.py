@@ -15,10 +15,10 @@ from idp_config_registry.domain.entities import Source, utc_now
 
 @dataclass(frozen=True)
 class CreateSourceCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
     source_type: str
     enabled: bool = True
     name: str | None = None
@@ -30,10 +30,10 @@ class CreateSourceCommand:
 
 @dataclass(frozen=True)
 class UpdateSourceCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
     source_type: str
     enabled: bool
     name: str | None = None
@@ -45,10 +45,10 @@ class UpdateSourceCommand:
 
 @dataclass(frozen=True)
 class DeleteSourceCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
 
 
 class CreateSource:
@@ -57,10 +57,10 @@ class CreateSource:
 
     async def execute(self, command: CreateSourceCommand) -> Source:
         source = Source(
-            tenant_id=command.tenant_id,
-            asset_id=command.asset_id,
-            agent_id=command.agent_id,
-            source_id=command.source_id,
+            tenant_code=command.tenant_code,
+            asset_code=command.asset_code,
+            agent_code=command.agent_code,
+            source_code=command.source_code,
             source_type=command.source_type,
             enabled=command.enabled,
             name=command.name,
@@ -73,31 +73,31 @@ class CreateSource:
         async with self._unit_of_work as unit_of_work:
             if (
                 await unit_of_work.agents.get(
-                    source.tenant_id,
-                    source.asset_id,
-                    source.agent_id,
+                    source.tenant_code,
+                    source.asset_code,
+                    source.agent_code,
                 )
                 is None
             ):
                 raise AgentNotFoundError(
-                    source.tenant_id,
-                    source.asset_id,
-                    source.agent_id,
+                    source.tenant_code,
+                    source.asset_code,
+                    source.agent_code,
                 )
             if (
                 await unit_of_work.sources.get(
-                    source.tenant_id,
-                    source.asset_id,
-                    source.agent_id,
-                    source.source_id,
+                    source.tenant_code,
+                    source.asset_code,
+                    source.agent_code,
+                    source.source_code,
                 )
                 is not None
             ):
                 raise DuplicateSourceError(
-                    source.tenant_id,
-                    source.asset_id,
-                    source.agent_id,
-                    source.source_id,
+                    source.tenant_code,
+                    source.asset_code,
+                    source.agent_code,
+                    source.source_code,
                 )
             await unit_of_work.sources.add(source)
             await unit_of_work.commit()
@@ -112,17 +112,17 @@ class UpdateSource:
     async def execute(self, command: UpdateSourceCommand) -> Source:
         async with self._unit_of_work as unit_of_work:
             existing = await unit_of_work.sources.get(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
-                command.source_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
+                command.source_code,
             )
             if existing is None:
                 raise SourceNotFoundError(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
-                    command.source_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
+                    command.source_code,
                 )
             source = replace(
                 existing,
@@ -147,62 +147,62 @@ class DeleteSource:
     async def execute(self, command: DeleteSourceCommand) -> None:
         async with self._unit_of_work as unit_of_work:
             existing = await unit_of_work.sources.get(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
-                command.source_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
+                command.source_code,
             )
             if existing is None:
                 raise SourceNotFoundError(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
-                    command.source_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
+                    command.source_code,
                 )
             if await unit_of_work.points.list_for_source(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
-                command.source_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
+                command.source_code,
             ):
                 raise SourceHasChildrenError(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
-                    command.source_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
+                    command.source_code,
                     reason="linked points still exist",
                 )
             if await unit_of_work.source_config_revisions.has_any_for_source(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
-                command.source_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
+                command.source_code,
             ):
                 raise SourceHasChildrenError(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
-                    command.source_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
+                    command.source_code,
                     reason="source config revisions still exist",
                 )
             if await unit_of_work.config_outbox.has_any_for_source(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
-                command.source_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
+                command.source_code,
             ):
                 raise SourceHasChildrenError(
-                    command.tenant_id,
-                    command.asset_id,
-                    command.agent_id,
-                    command.source_id,
+                    command.tenant_code,
+                    command.asset_code,
+                    command.agent_code,
+                    command.source_code,
                     reason="config outbox records still exist",
                 )
             await unit_of_work.sources.delete(
-                command.tenant_id,
-                command.asset_id,
-                command.agent_id,
-                command.source_id,
+                command.tenant_code,
+                command.asset_code,
+                command.agent_code,
+                command.source_code,
             )
             await unit_of_work.commit()
 
@@ -213,15 +213,15 @@ class ListSources:
 
     async def execute(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
     ) -> list[Source]:
         async with self._unit_of_work as unit_of_work:
-            if await unit_of_work.agents.get(tenant_id, asset_id, agent_id) is None:
-                raise AgentNotFoundError(tenant_id, asset_id, agent_id)
+            if await unit_of_work.agents.get(tenant_code, asset_code, agent_code) is None:
+                raise AgentNotFoundError(tenant_code, asset_code, agent_code)
             return await unit_of_work.sources.list_for_agent(
-                tenant_id,
-                asset_id,
-                agent_id,
+                tenant_code,
+                asset_code,
+                agent_code,
             )

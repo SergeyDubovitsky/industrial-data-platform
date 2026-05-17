@@ -42,7 +42,7 @@ class RenderAgentRuntimeConfigResponse(BaseModel):
             agent_runtime_payload=dict(agent_runtime_payload),
             source_payloads=[
                 RenderedSourceConfigResponse(
-                    source_id=source.source_id,
+                    source_id=source.source_code,
                     source_config_revision=source.source_config_revision,
                     payload=dict(source.payload),
                 )

@@ -36,9 +36,9 @@ from idp_config_registry.infrastructure.backoffice_support import (
 
 @dataclass(frozen=True)
 class AgentRenderTarget:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
 
 
 @dataclass(frozen=True)
@@ -116,9 +116,9 @@ class ConfigOutboxActionsBackofficeView(BaseView):
 async def render_agent_config_for_agent(
     request: Request,
     *,
-    tenant_id: str,
-    asset_id: str,
-    agent_id: str,
+    tenant_code: str,
+    asset_code: str,
+    agent_code: str,
     issued_at: datetime | None = None,
 ) -> RenderAgentRuntimeConfigResult:
     resolved_issued_at = issued_at or datetime.now(UTC)
@@ -128,9 +128,9 @@ async def render_agent_config_for_agent(
         state.config_payload_validator,
     ).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id=tenant_id,
-            asset_id=asset_id,
-            agent_id=agent_id,
+            tenant_code=tenant_code,
+            asset_code=asset_code,
+            agent_code=agent_code,
             config_revision=auto_config_revision(resolved_issued_at),
             issued_at=resolved_issued_at,
             source_config_revisions=None,
@@ -143,9 +143,9 @@ async def render_agent_config_for_agent(
     agent_runtime_payload = rendered.agent_runtime_payload
     return RenderAgentRuntimeConfigResult(
         target=AgentRenderTarget(
-            tenant_id=tenant_id,
-            asset_id=asset_id,
-            agent_id=agent_id,
+            tenant_code=tenant_code,
+            asset_code=asset_code,
+            agent_code=agent_code,
         ),
         config_revision=str(agent_runtime_payload["config_revision"]),
         outbox_record_count=1 + len(rendered.source_payloads),
@@ -175,9 +175,9 @@ async def render_agent_config_action_response(
         try:
             result = await render_agent_config_for_agent(
                 request,
-                tenant_id=target.tenant_id,
-                asset_id=target.asset_id,
-                agent_id=target.agent_id,
+                tenant_code=target.tenant_code,
+                asset_code=target.asset_code,
+                agent_code=target.agent_code,
             )
         except (
             AgentNotFoundError,
@@ -228,8 +228,8 @@ def render_agent_config_results_html(
     success_items = "\n".join(
         (
             "<li>"
-            f"<strong>{html.escape(result.target.agent_id)}</strong>"
-            f" ({html.escape(result.target.tenant_id)} / {html.escape(result.target.asset_id)})"
+            f"<strong>{html.escape(result.target.agent_code)}</strong>"
+            f" ({html.escape(result.target.tenant_code)} / {html.escape(result.target.asset_code)})"
             f": revision={html.escape(result.config_revision)}, "
             f"outbox_records={result.outbox_record_count}"
             "</li>"
@@ -239,8 +239,8 @@ def render_agent_config_results_html(
     failure_items = "\n".join(
         (
             "<li>"
-            f"<strong>{html.escape(failure.target.agent_id)}</strong>"
-            f" ({html.escape(failure.target.tenant_id)} / {html.escape(failure.target.asset_id)})"
+            f"<strong>{html.escape(failure.target.agent_code)}</strong>"
+            f" ({html.escape(failure.target.tenant_code)} / {html.escape(failure.target.asset_code)})"
             f": {html.escape(failure.detail)}"
             "</li>"
         )

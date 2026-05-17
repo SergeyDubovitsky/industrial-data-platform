@@ -26,20 +26,20 @@ pytestmark = pytest.mark.asyncio
 async def test_create_asset_persists_entity_under_existing_tenant() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
 
     asset = await CreateAsset(unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
             name="Asset A",
             description="Primary monitored asset",
         )
     )
     assets = await ListAssets(unit_of_work_factory()).execute("tenant-a")
 
-    assert asset.asset_id == "asset-a"
+    assert asset.asset_code == "asset-a"
     assert asset.description == "Primary monitored asset"
     assert assets == [asset]
 
@@ -50,8 +50,8 @@ async def test_create_asset_rejects_missing_tenant() -> None:
     with pytest.raises(TenantNotFoundError):
         await CreateAsset(unit_of_work_factory()).execute(
             CreateAssetCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
                 name="Asset A",
             )
         )
@@ -60,11 +60,11 @@ async def test_create_asset_rejects_missing_tenant() -> None:
 async def test_create_asset_rejects_duplicate_asset_id_in_tenant() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
     command = CreateAssetCommand(
-        tenant_id="tenant-a",
-        asset_id="asset-a",
+        tenant_code="tenant-a",
+        asset_code="asset-a",
         name="Asset A",
     )
 
@@ -76,14 +76,14 @@ async def test_create_asset_rejects_duplicate_asset_id_in_tenant() -> None:
 async def test_create_asset_rejects_invalid_asset_id() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
 
     with pytest.raises(DomainValidationError):
         await CreateAsset(unit_of_work_factory()).execute(
             CreateAssetCommand(
-                tenant_id="tenant-a",
-                asset_id="Asset A",
+                tenant_code="tenant-a",
+                asset_code="Asset A",
                 name="Asset A",
             )
         )

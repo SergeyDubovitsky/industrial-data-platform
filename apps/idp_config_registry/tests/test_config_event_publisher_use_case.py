@@ -160,13 +160,13 @@ def _command(
 def _outbox_record(*, idempotency_key: str) -> ConfigOutboxRecord:
     created_at = datetime(2026, 5, 3, 9, 59, tzinfo=UTC)
     return ConfigOutboxRecord.new(
-        tenant_id="tenant-a",
+        tenant_code="tenant-a",
         idempotency_key=idempotency_key,
-        asset_id="asset-a",
-        agent_id="agent-a",
+        asset_code="asset-a",
+        agent_code="agent-a",
         config_revision="rev-001",
         config_scope="agent_runtime",
-        source_id=None,
+        source_code=None,
         source_config_revision=None,
         kafka_key="tenant-a|asset-a|agent-a|agent_runtime",
         payload_json={

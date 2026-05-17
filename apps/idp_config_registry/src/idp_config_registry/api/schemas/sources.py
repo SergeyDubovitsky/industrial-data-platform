@@ -37,10 +37,10 @@ class SourceResponse(BaseModel):
     @classmethod
     def from_domain(cls, source: Source) -> SourceResponse:
         return cls(
-            tenant_id=source.tenant_id,
-            asset_id=source.asset_id,
-            agent_id=source.agent_id,
-            source_id=source.source_id,
+            tenant_id=source.tenant_code,
+            asset_id=source.asset_code,
+            agent_id=source.agent_code,
+            source_id=source.source_code,
             source_type=source.source_type,
             enabled=source.enabled,
             name=source.name,

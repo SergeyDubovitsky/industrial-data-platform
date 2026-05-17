@@ -33,9 +33,9 @@ class AgentResponse(BaseModel):
     @classmethod
     def from_domain(cls, agent: Agent) -> AgentResponse:
         return cls(
-            tenant_id=agent.tenant_id,
-            asset_id=agent.asset_id,
-            agent_id=agent.agent_id,
+            tenant_id=agent.tenant_code,
+            asset_id=agent.asset_code,
+            agent_id=agent.agent_code,
             name=agent.name,
             status=agent.status,
             bootstrap_hint_json=dict(agent.bootstrap_hint_json),
@@ -63,9 +63,9 @@ class AgentRegistryGraphDeleteResponse(BaseModel):
         result: DeleteAgentRegistryGraphResult,
     ) -> AgentRegistryGraphDeleteResponse:
         return cls(
-            tenant_id=result.tenant_id,
-            asset_id=result.asset_id,
-            agent_id=result.agent_id,
+            tenant_id=result.tenant_code,
+            asset_id=result.asset_code,
+            agent_id=result.agent_code,
             config_outbox_records_deleted=result.config_outbox_records_deleted,
             source_config_revisions_deleted=result.source_config_revisions_deleted,
             agent_runtime_config_revisions_deleted=(

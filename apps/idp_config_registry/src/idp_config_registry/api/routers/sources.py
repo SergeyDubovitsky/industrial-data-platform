@@ -36,13 +36,17 @@ async def create_source(
     request: SourceCreateRequest,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> SourceResponse:
+    tenant_code = tenant_id
+    asset_code = asset_id
+    agent_code = agent_id
+    source_code = request.source_id
     try:
         source = await CreateSource(unit_of_work_factory()).execute(
             CreateSourceCommand(
-                tenant_id=tenant_id,
-                asset_id=asset_id,
-                agent_id=agent_id,
-                source_id=request.source_id,
+                tenant_code=tenant_code,
+                asset_code=asset_code,
+                agent_code=agent_code,
+                source_code=source_code,
                 source_type=request.source_type,
                 enabled=request.enabled,
                 name=request.name,
@@ -78,11 +82,14 @@ async def list_sources(
     agent_id: str,
     unit_of_work_factory: UnitOfWorkFactory = Depends(get_unit_of_work_factory),
 ) -> list[SourceResponse]:
+    tenant_code = tenant_id
+    asset_code = asset_id
+    agent_code = agent_id
     try:
         sources = await ListSources(unit_of_work_factory()).execute(
-            tenant_id,
-            asset_id,
-            agent_id,
+            tenant_code,
+            asset_code,
+            agent_code,
         )
     except AgentNotFoundError as exc:
         raise HTTPException(

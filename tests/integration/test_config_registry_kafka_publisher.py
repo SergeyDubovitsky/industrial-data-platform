@@ -48,13 +48,13 @@ async def test_config_registry_kafka_publisher_writes_config_delivery_record(
     local_platform_stack,
 ) -> None:
     record = ConfigOutboxRecord.new(
-        tenant_id="tenant-a",
+        tenant_code="tenant-a",
         idempotency_key="tenant-a|asset-a|agent-a|rev-001|agent_runtime",
-        asset_id="asset-a",
-        agent_id="agent-a",
+        asset_code="asset-a",
+        agent_code="agent-a",
         config_revision="rev-001",
         config_scope="agent_runtime",
-        source_id=None,
+        source_code=None,
         source_config_revision=None,
         kafka_key="tenant-a|asset-a|agent-a|agent_runtime",
         payload_json={
@@ -127,9 +127,9 @@ async def test_config_registry_cli_publishes_outbox_batch_to_kafka(
     try:
         rendered = await RenderAgentRuntimeConfig(unit_of_work_factory(), validator).execute(
             RenderAgentRuntimeConfigCommand(
-                tenant_id="tenant-cli",
-                asset_id="asset-a",
-                agent_id="agent-a",
+                tenant_code="tenant-cli",
+                asset_code="asset-a",
+                agent_code="agent-a",
                 config_revision="rev-cli-001",
                 issued_at=datetime(2026, 5, 3, 10, 0, tzinfo=UTC),
                 source_config_revisions={"knx-main": "rev-cli-001-knx-main"},
@@ -188,7 +188,7 @@ def test_config_outbox_worker_container_publishes_records_to_kafka_and_mqtt(
 ) -> None:
     _create_renderable_agent_graph_via_api(
         local_config_delivery_stack,
-        tenant_id="tenant-worker",
+        tenant_code="tenant-worker",
     )
     rendered = local_config_delivery_stack.config_registry_json(
         "POST",
@@ -504,22 +504,22 @@ def test_publish_edge_demo_cli_seeds_config_through_config_registry_api_by_defau
 def _create_renderable_agent_graph(
     client: TestClient,
     *,
-    tenant_id: str = "tenant-cli",
+    tenant_code: str = "tenant-cli",
 ) -> None:
     client.post(
         "/tenants",
-        json={"tenant_id": tenant_id, "name": "Tenant CLI"},
+        json={"tenant_id": tenant_code, "name": "Tenant CLI"},
     )
     client.post(
-        f"/tenants/{tenant_id}/assets",
+        f"/tenants/{tenant_code}/assets",
         json={"asset_id": "asset-a", "name": "Asset A"},
     )
     client.post(
-        f"/tenants/{tenant_id}/assets/asset-a/agents",
+        f"/tenants/{tenant_code}/assets/asset-a/agents",
         json={"agent_id": "agent-a"},
     )
     client.post(
-        f"/tenants/{tenant_id}/assets/asset-a/agents/agent-a/sources",
+        f"/tenants/{tenant_code}/assets/asset-a/agents/agent-a/sources",
         json={
             "source_id": "knx-main",
             "source_type": "knx",
@@ -536,10 +536,10 @@ def _create_renderable_agent_graph(
         },
     )
     client.post(
-        f"/tenants/{tenant_id}/assets/asset-a/agents/agent-a"
+        f"/tenants/{tenant_code}/assets/asset-a/agents/agent-a"
         "/sources/knx-main/points",
         json={
-            "point_id": f"{tenant_id}|asset-a|knx-main|temperature",
+            "point_id": f"{tenant_code}|asset-a|knx-main|temperature",
             "point_key": "temperature",
             "point_ref": "2/0/0",
             "name": "Temperature",
@@ -556,26 +556,26 @@ def _create_renderable_agent_graph(
 def _create_renderable_agent_graph_via_api(
     stack,
     *,
-    tenant_id: str,
+    tenant_code: str,
 ) -> None:
     stack.config_registry_json(
         "POST",
         "/tenants",
-        {"tenant_id": tenant_id, "name": "Tenant Worker"},
+        {"tenant_id": tenant_code, "name": "Tenant Worker"},
     )
     stack.config_registry_json(
         "POST",
-        f"/tenants/{tenant_id}/assets",
+        f"/tenants/{tenant_code}/assets",
         {"asset_id": "asset-a", "name": "Asset A"},
     )
     stack.config_registry_json(
         "POST",
-        f"/tenants/{tenant_id}/assets/asset-a/agents",
+        f"/tenants/{tenant_code}/assets/asset-a/agents",
         {"agent_id": "agent-a"},
     )
     stack.config_registry_json(
         "POST",
-        f"/tenants/{tenant_id}/assets/asset-a/agents/agent-a/sources",
+        f"/tenants/{tenant_code}/assets/asset-a/agents/agent-a/sources",
         {
             "source_id": "knx-main",
             "source_type": "knx",
@@ -593,10 +593,10 @@ def _create_renderable_agent_graph_via_api(
     )
     stack.config_registry_json(
         "POST",
-        f"/tenants/{tenant_id}/assets/asset-a/agents/agent-a"
+        f"/tenants/{tenant_code}/assets/asset-a/agents/agent-a"
         "/sources/knx-main/points",
         {
-            "point_id": f"{tenant_id}|asset-a|knx-main|temperature",
+            "point_id": f"{tenant_code}|asset-a|knx-main|temperature",
             "point_key": "temperature",
             "point_ref": "2/0/0",
             "name": "Temperature",

@@ -31,12 +31,12 @@ async def _create_tenant_and_asset(
     unit_of_work_factory: InMemoryUnitOfWorkFactory,
 ) -> None:
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
     await CreateAsset(unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
             name="Asset A",
         )
     )
@@ -48,9 +48,9 @@ async def test_create_agent_persists_entity_under_existing_asset() -> None:
 
     agent = await CreateAgent(unit_of_work_factory()).execute(
         CreateAgentCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             name="Agent A",
             bootstrap_hint_json={"mqtt_profile": "local"},
         )
@@ -60,7 +60,7 @@ async def test_create_agent_persists_entity_under_existing_asset() -> None:
         "asset-a",
     )
 
-    assert agent.agent_id == "agent-a"
+    assert agent.agent_code == "agent-a"
     assert agent.bootstrap_hint_json == {"mqtt_profile": "local"}
     assert agents == [agent]
 
@@ -71,9 +71,9 @@ async def test_create_agent_rejects_missing_asset() -> None:
     with pytest.raises(AssetNotFoundError):
         await CreateAgent(unit_of_work_factory()).execute(
             CreateAgentCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="agent-a",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="agent-a",
             )
         )
 
@@ -82,9 +82,9 @@ async def test_create_agent_rejects_duplicate_agent_id_in_asset() -> None:
     unit_of_work_factory = InMemoryUnitOfWorkFactory()
     await _create_tenant_and_asset(unit_of_work_factory)
     command = CreateAgentCommand(
-        tenant_id="tenant-a",
-        asset_id="asset-a",
-        agent_id="agent-a",
+        tenant_code="tenant-a",
+        asset_code="asset-a",
+        agent_code="agent-a",
     )
 
     await CreateAgent(unit_of_work_factory()).execute(command)
@@ -99,9 +99,9 @@ async def test_create_agent_rejects_invalid_agent_id() -> None:
     with pytest.raises(DomainValidationError):
         await CreateAgent(unit_of_work_factory()).execute(
             CreateAgentCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="Agent A",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="Agent A",
             )
         )
 

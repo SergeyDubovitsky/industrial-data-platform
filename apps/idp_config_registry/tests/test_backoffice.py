@@ -80,25 +80,24 @@ from idp_config_registry.settings import ConfigRegistrySettings
 CONFIG_REGISTRY_SRC = Path(__file__).resolve().parents[1] / "src" / "idp_config_registry"
 
 LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...] = (
-    (TenantBackofficeView, TenantModel, ("tenant_id", "name", "status", "updated_at")),
+    (TenantBackofficeView, TenantModel, ("tenant_code", "name", "status", "updated_at")),
     (
         AssetBackofficeView,
         AssetModel,
-        ("tenant_id", "asset_id", "name", "status", "updated_at"),
+        ("tenant_id", "asset_code", "name", "status", "updated_at"),
     ),
     (
         AgentBackofficeView,
         AgentModel,
-        ("tenant_id", "asset_id", "agent_id", "name", "status", "updated_at"),
+        ("tenant_id", "asset_id", "agent_code", "name", "status", "updated_at"),
     ),
     (
         SourceBackofficeView,
         SourceModel,
         (
             "tenant_id",
-            "asset_id",
             "agent_id",
-            "source_id",
+            "source_code",
             "source_type",
             "enabled",
             "name",
@@ -111,7 +110,7 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
         (
             "tenant_id",
             "source_id",
-            "point_id",
+            "point_code",
             "point_key",
             "name",
             "value_type",
@@ -123,14 +122,14 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
     (
         AgentRuntimeConfigRevisionBackofficeView,
         AgentRuntimeConfigRevisionModel,
-        ("tenant_id", "agent_id", "config_revision", "status", "issued_at", "created_at"),
+        ("tenant_code", "agent_code", "config_revision", "status", "issued_at", "created_at"),
     ),
     (
         SourceConfigRevisionBackofficeView,
         SourceConfigRevisionModel,
         (
-            "tenant_id",
-            "source_id",
+            "tenant_code",
+            "source_code",
             "source_config_revision",
             "config_revision",
             "status",
@@ -143,12 +142,12 @@ LIST_VIEW_COLUMNS: tuple[tuple[type[object], type[object], tuple[str, ...]], ...
         ConfigOutboxModel,
         (
             "status",
-            "tenant_id",
-            "agent_id",
+            "tenant_code",
+            "agent_code",
             "config_revision",
             "config_scope",
             "message_type",
-            "source_id",
+            "source_code",
             "attempt_count",
             "updated_at",
         ),
@@ -252,7 +251,7 @@ def test_backoffice_tenant_create_form_hides_system_fields() -> None:
         response = client.get("/backoffice/tenant-model/create")
 
     assert response.status_code == 200
-    assert 'name="tenant_id"' in response.text
+    assert 'name="tenant_code"' in response.text
     assert 'name="name"' in response.text
     assert 'name="status"' not in response.text
     assert 'name="created_at"' not in response.text
@@ -271,7 +270,7 @@ async def test_backoffice_asset_create_form_uses_tenant_selector() -> None:
     assert response.status_code == 200
     assert f'name="{TENANT_SELECTOR_FIELD}"' in response.text
     assert 'name="tenant_id"' not in response.text
-    assert 'name="asset_id"' in response.text
+    assert 'name="asset_code"' in response.text
     assert "Tenant Backoffice (tenant-backoffice)" in response.text
 
 
@@ -288,7 +287,7 @@ async def test_backoffice_agent_create_form_uses_asset_selector() -> None:
     assert f'name="{ASSET_SELECTOR_FIELD}"' in response.text
     assert 'name="tenant_id"' not in response.text
     assert 'name="asset_id"' not in response.text
-    assert 'name="agent_id"' in response.text
+    assert 'name="agent_code"' in response.text
     assert (
         "Tenant Backoffice (tenant-backoffice) / Asset Backoffice (asset-backoffice)"
     ) in response.text
@@ -308,7 +307,7 @@ async def test_backoffice_source_create_form_uses_agent_selector() -> None:
     assert 'name="tenant_id"' not in response.text
     assert 'name="asset_id"' not in response.text
     assert 'name="agent_id"' not in response.text
-    assert 'name="source_id"' in response.text
+    assert 'name="source_code"' in response.text
     assert 'name="connection_json"' not in response.text
 
 
@@ -327,7 +326,7 @@ async def test_backoffice_point_create_form_uses_source_selector() -> None:
     assert 'name="asset_id"' not in response.text
     assert 'name="agent_id"' not in response.text
     assert 'name="source_id"' not in response.text
-    assert 'name="point_id"' in response.text
+    assert 'name="point_code"' in response.text
     assert 'name="acquisition_json"' not in response.text
 
 
@@ -426,7 +425,7 @@ def test_backoffice_can_create_tenant_via_mounted_form() -> None:
         response = client.post(
             "/backoffice/tenant-model/create",
             data={
-                "tenant_id": "tenant-ui",
+                "tenant_code": "tenant-ui",
                 "name": "Tenant UI",
                 "save": "Save",
             },
@@ -449,7 +448,7 @@ async def test_backoffice_can_create_asset_via_mounted_form() -> None:
             "/backoffice/asset-model/create",
             data={
                 TENANT_SELECTOR_FIELD: "tenant-backoffice",
-                "asset_id": "asset-ui",
+                "asset_code": "asset-ui",
                 "name": "Asset UI",
                 "description": "Created from mounted backoffice form",
                 "save": "Save",
@@ -474,11 +473,11 @@ async def test_backoffice_can_create_agent_via_mounted_form() -> None:
             data={
                 ASSET_SELECTOR_FIELD: encode_asset_selection(
                     AssetSelection(
-                        tenant_id="tenant-backoffice",
-                        asset_id="asset-backoffice",
+                        tenant_code="tenant-backoffice",
+                        asset_code="asset-backoffice",
                     )
                 ),
-                "agent_id": "agent-ui",
+                "agent_code": "agent-ui",
                 "name": "Agent UI",
                 "save": "Save",
             },
@@ -504,12 +503,12 @@ async def test_backoffice_can_create_source_via_mounted_form() -> None:
             data={
                 AGENT_SELECTOR_FIELD: encode_agent_selection(
                     AgentSelection(
-                        tenant_id="tenant-backoffice",
-                        asset_id="asset-backoffice",
-                        agent_id="agent-backoffice",
+                        tenant_code="tenant-backoffice",
+                        asset_code="asset-backoffice",
+                        agent_code="agent-backoffice",
                     )
                 ),
-                "source_id": "source-ui",
+                "source_code": "source-ui",
                 "source_type": "knx",
                 "enabled": "y",
                 "name": "Source UI",
@@ -539,13 +538,13 @@ async def test_backoffice_can_create_point_via_mounted_form() -> None:
             data={
                 SOURCE_SELECTOR_FIELD: encode_source_selection(
                     SourceSelection(
-                        tenant_id="tenant-backoffice",
-                        asset_id="asset-backoffice",
-                        agent_id="agent-backoffice",
-                        source_id="source-backoffice",
+                        tenant_code="tenant-backoffice",
+                        asset_code="asset-backoffice",
+                        agent_code="agent-backoffice",
+                        source_code="source-backoffice",
                     )
                 ),
-                "point_id": "point-ui",
+                "point_code": "point-ui",
                 "point_key": "2%2F3%2F4",
                 "point_ref": "2/3/4",
                 "name": "Point UI",
@@ -731,7 +730,7 @@ async def test_backoffice_can_delete_tenant_via_mounted_delete_route() -> None:
     app = create_app(settings=_settings(internal_mode=True))
     app.state.unit_of_work_factory = InMemoryUnitOfWorkFactory()
     await CreateTenant(app.state.unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-delete", name="Tenant Delete")
+        CreateTenantCommand(tenant_code="tenant-delete", name="Tenant Delete")
     )
 
     with TestClient(app) as client:
@@ -753,8 +752,8 @@ async def test_backoffice_can_delete_asset_via_mounted_delete_route() -> None:
     await _seed_registry_tree(app)
     await CreateAsset(app.state.unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-delete",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-delete",
             name="Asset Delete",
         )
     )
@@ -778,9 +777,9 @@ async def test_backoffice_can_delete_agent_via_mounted_delete_route() -> None:
     await _seed_registry_tree(app)
     await CreateAgent(app.state.unit_of_work_factory()).execute(
         CreateAgentCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-delete",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-delete",
         )
     )
 
@@ -806,10 +805,10 @@ async def test_backoffice_can_delete_source_via_mounted_delete_route() -> None:
     await _seed_registry_tree(app)
     await CreateSource(app.state.unit_of_work_factory()).execute(
         CreateSourceCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
-            source_id="source-delete",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
+            source_code="source-delete",
             source_type="knx",
             acquisition_defaults_json={
                 "listen": True,
@@ -846,11 +845,11 @@ async def test_backoffice_can_delete_point_via_mounted_delete_route() -> None:
     await _seed_registry_tree(app)
     await CreatePoint(app.state.unit_of_work_factory()).execute(
         CreatePointCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
-            source_id="source-backoffice",
-            point_id="point-delete",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
+            source_code="source-backoffice",
+            point_code="point-delete",
             point_key="3%2F3%2F3",
             point_ref="3/3/3",
             name="Point Delete",
@@ -888,9 +887,9 @@ async def test_backoffice_can_create_agent_runtime_config_revision_via_mounted_f
             data={
                 AGENT_SELECTOR_FIELD: encode_agent_selection(
                     AgentSelection(
-                        tenant_id="tenant-backoffice",
-                        asset_id="asset-backoffice",
-                        agent_id="agent-backoffice",
+                        tenant_code="tenant-backoffice",
+                        asset_code="asset-backoffice",
+                        agent_code="agent-backoffice",
                     )
                 ),
                 "config_revision": "rev-ui",
@@ -921,9 +920,9 @@ async def test_backoffice_can_create_source_config_revision_via_mounted_form() -
     await _seed_registry_tree(app)
     await CreateAgentRuntimeConfigRevision(app.state.unit_of_work_factory()).execute(
         CreateAgentRuntimeConfigRevisionCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
             config_revision="rev-ui",
             issued_at=datetime(2026, 5, 4, 6, 58, tzinfo=UTC),
             agent_runtime_payload_json={"demo": True},
@@ -936,10 +935,10 @@ async def test_backoffice_can_create_source_config_revision_via_mounted_form() -
             data={
                 SOURCE_SELECTOR_FIELD: encode_source_selection(
                     SourceSelection(
-                        tenant_id="tenant-backoffice",
-                        asset_id="asset-backoffice",
-                        agent_id="agent-backoffice",
-                        source_id="source-backoffice",
+                        tenant_code="tenant-backoffice",
+                        asset_code="asset-backoffice",
+                        agent_code="agent-backoffice",
+                        source_code="source-backoffice",
                     )
                 ),
                 "source_config_revision": "src-rev-ui",
@@ -972,9 +971,9 @@ async def test_backoffice_config_revision_edit_and_delete_are_disabled() -> None
     await _seed_registry_tree(app)
     await CreateAgentRuntimeConfigRevision(app.state.unit_of_work_factory()).execute(
         CreateAgentRuntimeConfigRevisionCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
             config_revision="rev-disabled",
             issued_at=datetime(2026, 5, 4, 7, 0, tzinfo=UTC),
             agent_runtime_payload_json={"demo": True},
@@ -1179,30 +1178,30 @@ async def _seed_registry_tree(
     unit_of_work_factory = app.state.unit_of_work_factory
     await CreateTenant(unit_of_work_factory()).execute(
         CreateTenantCommand(
-            tenant_id="tenant-backoffice",
+            tenant_code="tenant-backoffice",
             name="Tenant Backoffice",
         )
     )
     await CreateAsset(unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
             name="Asset Backoffice",
         )
     )
     await CreateAgent(unit_of_work_factory()).execute(
         CreateAgentCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
         )
     )
     await CreateSource(unit_of_work_factory()).execute(
         CreateSourceCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
-            source_id="source-backoffice",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
+            source_code="source-backoffice",
             source_type="knx",
             acquisition_defaults_json=(
                 dict(acquisition_defaults)
@@ -1225,11 +1224,11 @@ async def _seed_registry_tree(
     )
     await CreatePoint(unit_of_work_factory()).execute(
         CreatePointCommand(
-            tenant_id="tenant-backoffice",
-            asset_id="asset-backoffice",
-            agent_id="agent-backoffice",
-            source_id="source-backoffice",
-            point_id="point-backoffice",
+            tenant_code="tenant-backoffice",
+            asset_code="asset-backoffice",
+            agent_code="agent-backoffice",
+            source_code="source-backoffice",
+            point_code="point-backoffice",
             point_key="1%2F2%2F3",
             point_ref="1/2/3",
             name="Point Backoffice",
@@ -1255,8 +1254,8 @@ async def _render_backoffice_config(app: object) -> None:
     await _seed_registry_tree(app)
     await render_agent_config_for_agent(
         FakePageRequest(app),
-        tenant_id="tenant-backoffice",
-        asset_id="asset-backoffice",
-        agent_id="agent-backoffice",
+        tenant_code="tenant-backoffice",
+        asset_code="asset-backoffice",
+        agent_code="agent-backoffice",
         issued_at=datetime(2026, 5, 3, 12, 0, tzinfo=UTC),
     )

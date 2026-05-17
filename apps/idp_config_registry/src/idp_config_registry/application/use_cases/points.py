@@ -15,11 +15,11 @@ from idp_config_registry.domain.value_objects import SignalType, ValueType
 
 @dataclass(frozen=True)
 class CreatePointCommand:
-    tenant_id: str
-    asset_id: str
-    agent_id: str
-    source_id: str
-    point_id: str
+    tenant_code: str
+    asset_code: str
+    agent_code: str
+    source_code: str
+    point_code: str
     point_key: str
     point_ref: str
     name: str
@@ -36,8 +36,8 @@ class CreatePointCommand:
 
 @dataclass(frozen=True)
 class UpdatePointCommand:
-    tenant_id: str
-    point_id: str
+    tenant_code: str
+    point_code: str
     point_key: str
     point_ref: str
     name: str
@@ -54,11 +54,11 @@ class UpdatePointCommand:
 
 @dataclass(frozen=True)
 class DeletePointCommand:
-    tenant_id: str
-    point_id: str
-    asset_id: str | None = None
-    agent_id: str | None = None
-    source_id: str | None = None
+    tenant_code: str
+    point_code: str
+    asset_code: str | None = None
+    agent_code: str | None = None
+    source_code: str | None = None
 
 
 class CreatePoint:
@@ -67,11 +67,11 @@ class CreatePoint:
 
     async def execute(self, command: CreatePointCommand) -> Point:
         point = Point(
-            tenant_id=command.tenant_id,
-            asset_id=command.asset_id,
-            agent_id=command.agent_id,
-            source_id=command.source_id,
-            point_id=command.point_id,
+            tenant_code=command.tenant_code,
+            asset_code=command.asset_code,
+            agent_code=command.agent_code,
+            source_code=command.source_code,
+            point_code=command.point_code,
             point_key=command.point_key,
             point_ref=command.point_ref,
             name=command.name,
@@ -89,48 +89,48 @@ class CreatePoint:
         async with self._unit_of_work as unit_of_work:
             if (
                 await unit_of_work.sources.get(
-                    point.tenant_id,
-                    point.asset_id,
-                    point.agent_id,
-                    point.source_id,
+                    point.tenant_code,
+                    point.asset_code,
+                    point.agent_code,
+                    point.source_code,
                 )
                 is None
             ):
                 raise SourceNotFoundError(
-                    point.tenant_id,
-                    point.asset_id,
-                    point.agent_id,
-                    point.source_id,
+                    point.tenant_code,
+                    point.asset_code,
+                    point.agent_code,
+                    point.source_code,
                 )
-            if await unit_of_work.points.get_by_id(point.tenant_id, point.point_id):
-                raise DuplicatePointError(point.tenant_id, "point_id", point.point_id)
+            if await unit_of_work.points.get_by_id(point.tenant_code, point.point_code):
+                raise DuplicatePointError(point.tenant_code, "point_id", point.point_code)
             if (
                 await unit_of_work.points.get_by_key(
-                    point.tenant_id,
-                    point.asset_id,
-                    point.agent_id,
-                    point.source_id,
+                    point.tenant_code,
+                    point.asset_code,
+                    point.agent_code,
+                    point.source_code,
                     point.point_key,
                 )
                 is not None
             ):
                 raise DuplicatePointError(
-                    point.tenant_id,
+                    point.tenant_code,
                     "point_key",
                     point.point_key,
                 )
             if (
                 await unit_of_work.points.get_by_ref(
-                    point.tenant_id,
-                    point.asset_id,
-                    point.agent_id,
-                    point.source_id,
+                    point.tenant_code,
+                    point.asset_code,
+                    point.agent_code,
+                    point.source_code,
                     point.point_ref,
                 )
                 is not None
             ):
                 raise DuplicatePointError(
-                    point.tenant_id,
+                    point.tenant_code,
                     "point_ref",
                     point.point_ref,
                 )
@@ -147,42 +147,42 @@ class UpdatePoint:
     async def execute(self, command: UpdatePointCommand) -> Point:
         async with self._unit_of_work as unit_of_work:
             existing = await unit_of_work.points.get_by_id(
-                command.tenant_id,
-                command.point_id,
+                command.tenant_code,
+                command.point_code,
             )
             if existing is None:
-                raise PointNotFoundError(command.tenant_id, command.point_id)
+                raise PointNotFoundError(command.tenant_code, command.point_code)
 
             duplicate_key = await unit_of_work.points.get_by_key(
-                existing.tenant_id,
-                existing.asset_id,
-                existing.agent_id,
-                existing.source_id,
+                existing.tenant_code,
+                existing.asset_code,
+                existing.agent_code,
+                existing.source_code,
                 command.point_key,
             )
             if (
                 duplicate_key is not None
-                and duplicate_key.point_id != existing.point_id
+                and duplicate_key.point_code != existing.point_code
             ):
                 raise DuplicatePointError(
-                    existing.tenant_id,
+                    existing.tenant_code,
                     "point_key",
                     command.point_key,
                 )
 
             duplicate_ref = await unit_of_work.points.get_by_ref(
-                existing.tenant_id,
-                existing.asset_id,
-                existing.agent_id,
-                existing.source_id,
+                existing.tenant_code,
+                existing.asset_code,
+                existing.agent_code,
+                existing.source_code,
                 command.point_ref,
             )
             if (
                 duplicate_ref is not None
-                and duplicate_ref.point_id != existing.point_id
+                and duplicate_ref.point_code != existing.point_code
             ):
                 raise DuplicatePointError(
-                    existing.tenant_id,
+                    existing.tenant_code,
                     "point_ref",
                     command.point_ref,
                 )
@@ -215,20 +215,20 @@ class DeletePoint:
     async def execute(self, command: DeletePointCommand) -> None:
         async with self._unit_of_work as unit_of_work:
             point = await unit_of_work.points.get_by_id(
-                command.tenant_id,
-                command.point_id,
+                command.tenant_code,
+                command.point_code,
             )
             if point is None or not _point_matches_delete_scope(point, command):
-                raise PointNotFoundError(command.tenant_id, command.point_id)
-            await unit_of_work.points.delete(command.tenant_id, command.point_id)
+                raise PointNotFoundError(command.tenant_code, command.point_code)
+            await unit_of_work.points.delete(command.tenant_code, command.point_code)
             await unit_of_work.commit()
 
 
 def _point_matches_delete_scope(point: Point, command: DeletePointCommand) -> bool:
     return (
-        (command.asset_id is None or point.asset_id == command.asset_id)
-        and (command.agent_id is None or point.agent_id == command.agent_id)
-        and (command.source_id is None or point.source_id == command.source_id)
+        (command.asset_code is None or point.asset_code == command.asset_code)
+        and (command.agent_code is None or point.agent_code == command.agent_code)
+        and (command.source_code is None or point.source_code == command.source_code)
     )
 
 
@@ -238,25 +238,25 @@ class ListPoints:
 
     async def execute(
         self,
-        tenant_id: str,
-        asset_id: str,
-        agent_id: str,
-        source_id: str,
+        tenant_code: str,
+        asset_code: str,
+        agent_code: str,
+        source_code: str,
     ) -> list[Point]:
         async with self._unit_of_work as unit_of_work:
             if (
                 await unit_of_work.sources.get(
-                    tenant_id,
-                    asset_id,
-                    agent_id,
-                    source_id,
+                    tenant_code,
+                    asset_code,
+                    agent_code,
+                    source_code,
                 )
                 is None
             ):
-                raise SourceNotFoundError(tenant_id, asset_id, agent_id, source_id)
+                raise SourceNotFoundError(tenant_code, asset_code, agent_code, source_code)
             return await unit_of_work.points.list_for_source(
-                tenant_id,
-                asset_id,
-                agent_id,
-                source_id,
+                tenant_code,
+                asset_code,
+                agent_code,
+                source_code,
             )

@@ -59,9 +59,9 @@ async def test_render_agent_config_builds_valid_runtime_and_source_payloads() ->
         JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR),
     ).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             config_revision="rev-2026-05-03-001",
             issued_at=datetime(2026, 5, 3, 10, 15, 0, tzinfo=UTC),
             source_config_revisions={"knx-main": "rev-2026-05-03-001-knx-main"},
@@ -115,9 +115,9 @@ async def test_render_agent_config_rejects_missing_agent() -> None:
             JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR),
         ).execute(
             RenderAgentRuntimeConfigCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="agent-a",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="agent-a",
                 config_revision="rev-2026-05-03-001",
                 issued_at=datetime(2026, 5, 3, tzinfo=UTC),
             )
@@ -134,9 +134,9 @@ async def test_render_agent_config_rejects_missing_source_revision() -> None:
             JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR),
         ).execute(
             RenderAgentRuntimeConfigCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="agent-a",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="agent-a",
                 config_revision="rev-2026-05-03-001",
                 issued_at=datetime(2026, 5, 3, tzinfo=UTC),
                 source_config_revisions={},
@@ -157,9 +157,9 @@ async def test_render_agent_config_rejects_contract_invalid_source_payload() -> 
             JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR),
         ).execute(
             RenderAgentRuntimeConfigCommand(
-                tenant_id="tenant-a",
-                asset_id="asset-a",
-                agent_id="agent-a",
+                tenant_code="tenant-a",
+                asset_code="asset-a",
+                agent_code="agent-a",
                 config_revision="rev-2026-05-03-001",
                 issued_at=datetime(2026, 5, 3, tzinfo=UTC),
             )
@@ -181,9 +181,9 @@ async def test_render_agent_config_backfills_missing_source_and_point_settings()
         JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR),
     ).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             config_revision="rev-2026-05-03-legacy",
             issued_at=datetime(2026, 5, 3, 10, 15, 0, tzinfo=UTC),
             source_config_revisions={"knx-main": "rev-2026-05-03-legacy-knx-main"},
@@ -216,11 +216,11 @@ async def test_render_agent_config_suppresses_command_point_publish() -> None:
     await _create_registry_graph(unit_of_work_factory)
     await CreatePoint(unit_of_work_factory()).execute(
         CreatePointCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
-            source_id="knx-main",
-            point_id="tenant-a|asset-a|knx-main|switch-command",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
+            source_code="knx-main",
+            point_code="tenant-a|asset-a|knx-main|switch-command",
             point_key="switch-command",
             point_ref="0/0/1",
             name="Switch Command",
@@ -236,9 +236,9 @@ async def test_render_agent_config_suppresses_command_point_publish() -> None:
         JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR),
     ).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             config_revision="rev-2026-05-03-001",
             issued_at=datetime(2026, 5, 3, 10, 15, 0, tzinfo=UTC),
             source_config_revisions={"knx-main": "rev-2026-05-03-001-knx-main"},
@@ -262,9 +262,9 @@ async def test_store_rendered_agent_config_persists_runtime_and_source_revisions
     validator = JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR)
     rendered = await RenderAgentRuntimeConfig(unit_of_work_factory(), validator).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             config_revision="rev-2026-05-03-001",
             issued_at=datetime(2026, 5, 3, 10, 15, 0, tzinfo=UTC),
             source_config_revisions={"knx-main": "rev-2026-05-03-001-knx-main"},
@@ -300,7 +300,7 @@ async def test_store_rendered_agent_config_persists_runtime_and_source_revisions
     assert runtime_revision.config_revision == "rev-2026-05-03-001"
     assert stored_runtime is not None
     assert stored_runtime.agent_runtime_payload_json == rendered.agent_runtime_payload
-    assert [revision.source_id for revision in stored_sources] == ["knx-main"]
+    assert [revision.source_code for revision in stored_sources] == ["knx-main"]
     assert stored_sources[0].source_payload_json == rendered.source_payloads[0].payload
     assert [record.config_scope for record in outbox_records] == [
         "agent_runtime",
@@ -320,9 +320,9 @@ async def test_store_rendered_agent_config_rejects_duplicate_revision() -> None:
     validator = JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR)
     rendered = await RenderAgentRuntimeConfig(unit_of_work_factory(), validator).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             config_revision="rev-2026-05-03-001",
             issued_at=datetime(2026, 5, 3, 10, 15, 0, tzinfo=UTC),
         )
@@ -342,9 +342,9 @@ async def test_store_rendered_agent_config_rejects_invalid_delivery_payload() ->
     validator = JsonSchemaConfigPayloadValidator.from_contract_dir(CONTRACT_DIR)
     rendered = await RenderAgentRuntimeConfig(unit_of_work_factory(), validator).execute(
         RenderAgentRuntimeConfigCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
             config_revision="rev-2026-05-03-001",
             issued_at=datetime(2026, 5, 3, 10, 15, 0, tzinfo=UTC),
         )
@@ -420,28 +420,28 @@ async def _create_registry_graph(
     point_publish: dict[str, object] | None = None,
 ) -> None:
     await CreateTenant(unit_of_work_factory()).execute(
-        CreateTenantCommand(tenant_id="tenant-a", name="Tenant A")
+        CreateTenantCommand(tenant_code="tenant-a", name="Tenant A")
     )
     await CreateAsset(unit_of_work_factory()).execute(
         CreateAssetCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
             name="Asset A",
         )
     )
     await CreateAgent(unit_of_work_factory()).execute(
         CreateAgentCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
         )
     )
     await CreateSource(unit_of_work_factory()).execute(
         CreateSourceCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
-            source_id="knx-main",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
+            source_code="knx-main",
             source_type="knx",
             connection_json={"gateway_ip": "127.0.0.1"},
             acquisition_defaults_json=(
@@ -465,11 +465,11 @@ async def _create_registry_graph(
     )
     await CreatePoint(unit_of_work_factory()).execute(
         CreatePointCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
-            source_id="knx-main",
-            point_id="tenant-a|asset-a|knx-main|temperature",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
+            source_code="knx-main",
+            point_code="tenant-a|asset-a|knx-main|temperature",
             point_key="temperature",
             point_ref="2/0/0",
             name="Temperature",
@@ -492,11 +492,11 @@ async def _create_registry_graph(
     )
     await CreatePoint(unit_of_work_factory()).execute(
         CreatePointCommand(
-            tenant_id="tenant-a",
-            asset_id="asset-a",
-            agent_id="agent-a",
-            source_id="knx-main",
-            point_id="tenant-a|asset-a|knx-main|disabled",
+            tenant_code="tenant-a",
+            asset_code="asset-a",
+            agent_code="agent-a",
+            source_code="knx-main",
+            point_code="tenant-a|asset-a|knx-main|disabled",
             point_key="disabled",
             point_ref="2/0/1",
             name="Disabled",
