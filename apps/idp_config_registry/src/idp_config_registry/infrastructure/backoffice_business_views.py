@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqladmin import action
+from sqlalchemy import select
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
 
@@ -168,9 +169,10 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
+        tenant_code = await _resolve_tenant_public_key(request, pk)
         tenant = await UpdateTenant(get_request_state(request).unit_of_work_factory()).execute(
             UpdateTenantCommand(
-                tenant_code=str(pk),
+                tenant_code=tenant_code,
                 name=str(data["name"]),
                 status=TenantStatus(str(data["status"])),
             )
@@ -178,8 +180,9 @@ class TenantBackofficeView(ApplicationLookupBackofficeView, model=TenantModel):
         return _tenant_model(tenant)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
+        tenant_code = await _resolve_tenant_public_key(request, str(pk))
         await DeleteTenant(get_request_state(request).unit_of_work_factory()).execute(
-            DeleteTenantCommand(tenant_code=str(pk))
+            DeleteTenantCommand(tenant_code=tenant_code)
         )
 
     async def _get_object_from_uow(self, pk: str, unit_of_work: Any) -> Any:
@@ -245,10 +248,11 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
 
     async def get_object_for_edit(self, request: Request) -> Any:
         model = await super().get_object_for_edit(request)
+        tenant_code = await _asset_model_tenant_code(request, model)
         return attach_selector_value(
             model,
             field_name=TENANT_SELECTOR_FIELD,
-            value=str(model.tenant_code),
+            value=tenant_code,
         )
 
     async def insert_model(self, request: Request, data: dict[str, object]) -> object:
@@ -268,7 +272,7 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_code, asset_code = _decode_composite_pk(pk, 2)
+        tenant_code, asset_code = await _resolve_asset_public_key(request, pk)
         asset = await UpdateAsset(get_request_state(request).unit_of_work_factory()).execute(
             UpdateAssetCommand(
                 tenant_code=str(tenant_code),
@@ -281,7 +285,7 @@ class AssetBackofficeView(ApplicationLookupBackofficeView, model=AssetModel):
         return _asset_model(asset)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_code, asset_code = _decode_composite_pk(str(pk), 2)
+        tenant_code, asset_code = await _resolve_asset_public_key(request, str(pk))
         await DeleteAsset(get_request_state(request).unit_of_work_factory()).execute(
             DeleteAssetCommand(
                 tenant_code=str(tenant_code),
@@ -341,16 +345,9 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
     async def render_agent_config_action(self, request: Request) -> HTMLResponse:
         raw_pks = str(request.query_params.get("pks", ""))
         agent_targets = [
-            AgentRenderTarget(
-                tenant_code=str(tenant_code),
-                asset_code=str(asset_code),
-                agent_code=str(agent_code),
-            )
-            for tenant_code, asset_code, agent_code in (
-                _decode_composite_pk(pk, 3)
-                for pk in raw_pks.split(",")
-                if pk
-            )
+            await _resolve_agent_render_target(request, pk)
+            for pk in raw_pks.split(",")
+            if pk
         ]
         back_url = request.headers.get("referer") or str(
             request.url_for("admin:list", identity=self.identity)
@@ -386,13 +383,14 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
 
     async def get_object_for_edit(self, request: Request) -> Any:
         model = await super().get_object_for_edit(request)
+        tenant_code, asset_code = await _agent_model_asset_codes(request, model)
         return attach_selector_value(
             model,
             field_name=ASSET_SELECTOR_FIELD,
             value=encode_asset_selection(
                 AssetSelection(
-                    tenant_code=str(model.tenant_code),
-                    asset_code=str(model.asset_code),
+                    tenant_code=tenant_code,
+                    asset_code=asset_code,
                 )
             ),
         )
@@ -415,7 +413,10 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_code, asset_code, agent_code = _decode_composite_pk(pk, 3)
+        tenant_code, asset_code, agent_code = await _resolve_agent_public_key(
+            request,
+            pk,
+        )
         agent = await UpdateAgent(get_request_state(request).unit_of_work_factory()).execute(
             UpdateAgentCommand(
                 tenant_code=str(tenant_code),
@@ -432,7 +433,10 @@ class AgentBackofficeView(ApplicationLookupBackofficeView, model=AgentModel):
         return _agent_model(agent)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_code, asset_code, agent_code = _decode_composite_pk(str(pk), 3)
+        tenant_code, asset_code, agent_code = await _resolve_agent_public_key(
+            request,
+            str(pk),
+        )
         await DeleteAgent(get_request_state(request).unit_of_work_factory()).execute(
             DeleteAgentCommand(
                 tenant_code=str(tenant_code),
@@ -521,10 +525,20 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
 
     async def get_object_for_edit(self, request: Request) -> Any:
         model = await super().get_object_for_edit(request)
+        tenant_code, asset_code, agent_code = await _source_model_agent_codes(
+            request,
+            model,
+        )
         return attach_selector_value(
             model,
             field_name=AGENT_SELECTOR_FIELD,
-            value=_encode_agent_model_selection(model),
+            value=encode_agent_selection(
+                AgentSelection(
+                    tenant_code=tenant_code,
+                    asset_code=asset_code,
+                    agent_code=agent_code,
+                )
+            ),
         )
 
     async def insert_model(self, request: Request, data: dict[str, object]) -> object:
@@ -551,7 +565,9 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_code, asset_code, agent_code, source_code = _decode_composite_pk(pk, 4)
+        tenant_code, asset_code, agent_code, source_code = (
+            await _resolve_source_public_key(request, pk)
+        )
         source = await UpdateSource(get_request_state(request).unit_of_work_factory()).execute(
             UpdateSourceCommand(
                 tenant_code=str(tenant_code),
@@ -579,7 +595,9 @@ class SourceBackofficeView(ApplicationLookupBackofficeView, model=SourceModel):
         return _source_model(source)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_code, asset_code, agent_code, source_code = _decode_composite_pk(str(pk), 4)
+        tenant_code, asset_code, agent_code, source_code = (
+            await _resolve_source_public_key(request, str(pk))
+        )
         await DeleteSource(get_request_state(request).unit_of_work_factory()).execute(
             DeleteSourceCommand(
                 tenant_code=str(tenant_code),
@@ -687,15 +705,18 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
 
     async def get_object_for_edit(self, request: Request) -> Any:
         model = await super().get_object_for_edit(request)
+        tenant_code, asset_code, agent_code, source_code = (
+            await _point_model_source_codes(request, model)
+        )
         return attach_selector_value(
             model,
             field_name=SOURCE_SELECTOR_FIELD,
             value=encode_source_selection(
                 SourceSelection(
-                    tenant_code=str(model.tenant_code),
-                    asset_code=str(model.asset_code),
-                    agent_code=str(model.agent_code),
-                    source_code=str(model.source_code),
+                    tenant_code=tenant_code,
+                    asset_code=asset_code,
+                    agent_code=agent_code,
+                    source_code=source_code,
                 )
             ),
         )
@@ -728,7 +749,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         pk: str,
         data: dict[str, object],
     ) -> object:
-        tenant_code, point_code = _decode_composite_pk(pk, 2)
+        tenant_code, point_code = await _resolve_point_public_key(request, pk)
         point = await UpdatePoint(get_request_state(request).unit_of_work_factory()).execute(
             UpdatePointCommand(
                 tenant_code=str(tenant_code),
@@ -759,7 +780,7 @@ class PointBackofficeView(ApplicationLookupBackofficeView, model=PointModel):
         return _point_model(point)
 
     async def delete_model(self, request: Request, pk: Any) -> None:
-        tenant_code, point_code = _decode_composite_pk(str(pk), 2)
+        tenant_code, point_code = await _resolve_point_public_key(request, str(pk))
         await DeletePoint(get_request_state(request).unit_of_work_factory()).execute(
             DeletePointCommand(
                 tenant_code=str(tenant_code),
@@ -892,16 +913,6 @@ def _require_source_selection(value: object | None) -> SourceSelection:
     raise ValueError("Source selection must come from the backoffice form")
 
 
-def _encode_agent_model_selection(model: Any) -> str:
-    return encode_agent_selection(
-        AgentSelection(
-            tenant_code=str(model.tenant_code),
-            asset_code=str(model.asset_code),
-            agent_code=str(model.agent_code),
-        )
-    )
-
-
 def _decode_composite_pk(value: str, expected_parts: int) -> tuple[str, ...]:
     parts = tuple(value.split(";"))
     if len(parts) != expected_parts:
@@ -909,3 +920,196 @@ def _decode_composite_pk(value: str, expected_parts: int) -> tuple[str, ...]:
             f"Expected {expected_parts} public code parts in backoffice object id"
         )
     return parts
+
+
+async def _resolve_tenant_public_key(request: Request, pk: str) -> str:
+    uuid_pk = _uuid_or_none(pk)
+    if uuid_pk is None:
+        return pk
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code).where(TenantModel.id == uuid_pk),
+    )
+    return str(row[0]) if row is not None else pk
+
+
+async def _resolve_asset_public_key(request: Request, pk: str) -> tuple[str, str]:
+    uuid_pk = _uuid_or_none(pk)
+    if uuid_pk is None:
+        return _decode_composite_pk(pk, 2)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, AssetModel.code)
+        .select_from(AssetModel)
+        .join(TenantModel, AssetModel.tenant_id == TenantModel.id)
+        .where(AssetModel.id == uuid_pk),
+    )
+    if row is not None:
+        return str(row[0]), str(row[1])
+    return _decode_composite_pk(pk, 2)
+
+
+async def _resolve_agent_public_key(request: Request, pk: str) -> tuple[str, str, str]:
+    uuid_pk = _uuid_or_none(pk)
+    if uuid_pk is None:
+        return _decode_composite_pk(pk, 3)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, AssetModel.code, AgentModel.code)
+        .select_from(AgentModel)
+        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
+        .join(TenantModel, AgentModel.tenant_id == TenantModel.id)
+        .where(AgentModel.id == uuid_pk),
+    )
+    if row is not None:
+        return str(row[0]), str(row[1]), str(row[2])
+    return _decode_composite_pk(pk, 3)
+
+
+async def _resolve_source_public_key(
+    request: Request,
+    pk: str,
+) -> tuple[str, str, str, str]:
+    uuid_pk = _uuid_or_none(pk)
+    if uuid_pk is None:
+        return _decode_composite_pk(pk, 4)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, AssetModel.code, AgentModel.code, SourceModel.code)
+        .select_from(SourceModel)
+        .join(AgentModel, SourceModel.agent_id == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
+        .join(TenantModel, SourceModel.tenant_id == TenantModel.id)
+        .where(SourceModel.id == uuid_pk),
+    )
+    if row is not None:
+        return str(row[0]), str(row[1]), str(row[2]), str(row[3])
+    return _decode_composite_pk(pk, 4)
+
+
+async def _resolve_point_public_key(request: Request, pk: str) -> tuple[str, str]:
+    uuid_pk = _uuid_or_none(pk)
+    if uuid_pk is None:
+        return _decode_composite_pk(pk, 2)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, PointModel.code)
+        .select_from(PointModel)
+        .join(TenantModel, PointModel.tenant_id == TenantModel.id)
+        .where(PointModel.id == uuid_pk),
+    )
+    if row is not None:
+        return str(row[0]), str(row[1])
+    return _decode_composite_pk(pk, 2)
+
+
+async def _resolve_agent_render_target(request: Request, pk: str) -> AgentRenderTarget:
+    tenant_code, asset_code, agent_code = await _resolve_agent_public_key(request, pk)
+    return AgentRenderTarget(
+        tenant_code=tenant_code,
+        asset_code=asset_code,
+        agent_code=agent_code,
+    )
+
+
+async def _asset_model_tenant_code(request: Request, model: Any) -> str:
+    if hasattr(model, "tenant_code"):
+        return str(model.tenant_code)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code).where(TenantModel.id == model.tenant_id),
+    )
+    return str(row[0]) if row is not None else str(model.tenant_id)
+
+
+async def _agent_model_asset_codes(request: Request, model: Any) -> tuple[str, str]:
+    if hasattr(model, "tenant_code") and hasattr(model, "asset_code"):
+        return str(model.tenant_code), str(model.asset_code)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, AssetModel.code)
+        .select_from(AssetModel)
+        .join(TenantModel, AssetModel.tenant_id == TenantModel.id)
+        .where(AssetModel.id == model.asset_id),
+    )
+    if row is None:
+        return str(model.tenant_id), str(model.asset_id)
+    return str(row[0]), str(row[1])
+
+
+async def _source_model_agent_codes(
+    request: Request,
+    model: Any,
+) -> tuple[str, str, str]:
+    if (
+        hasattr(model, "tenant_code")
+        and hasattr(model, "asset_code")
+        and hasattr(model, "agent_code")
+    ):
+        return str(model.tenant_code), str(model.asset_code), str(model.agent_code)
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, AssetModel.code, AgentModel.code)
+        .select_from(AgentModel)
+        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
+        .join(TenantModel, AgentModel.tenant_id == TenantModel.id)
+        .where(AgentModel.id == model.agent_id),
+    )
+    if row is None:
+        return str(model.tenant_id), str(model.agent_id), str(model.agent_id)
+    return str(row[0]), str(row[1]), str(row[2])
+
+
+async def _point_model_source_codes(
+    request: Request,
+    model: Any,
+) -> tuple[str, str, str, str]:
+    if (
+        hasattr(model, "tenant_code")
+        and hasattr(model, "asset_code")
+        and hasattr(model, "agent_code")
+        and hasattr(model, "source_code")
+    ):
+        return (
+            str(model.tenant_code),
+            str(model.asset_code),
+            str(model.agent_code),
+            str(model.source_code),
+        )
+    row = await _postgres_lookup(
+        request,
+        select(TenantModel.code, AssetModel.code, AgentModel.code, SourceModel.code)
+        .select_from(SourceModel)
+        .join(AgentModel, SourceModel.agent_id == AgentModel.id)
+        .join(AssetModel, AgentModel.asset_id == AssetModel.id)
+        .join(TenantModel, SourceModel.tenant_id == TenantModel.id)
+        .where(SourceModel.id == model.source_id),
+    )
+    if row is None:
+        return (
+            str(model.tenant_id),
+            str(model.source_id),
+            str(model.source_id),
+            str(model.source_id),
+        )
+    return str(row[0]), str(row[1]), str(row[2]), str(row[3])
+
+
+async def _postgres_lookup(
+    request: Request,
+    statement: Any,
+) -> tuple[Any, ...] | None:
+    state = get_request_state(request)
+    unit_of_work_factory = state.unit_of_work_factory
+    if not isinstance(unit_of_work_factory, PostgresUnitOfWorkFactory):
+        return None
+    async with unit_of_work_factory.session_manager.session_factory() as session:
+        row = (await session.execute(statement)).one_or_none()
+    return tuple(row) if row is not None else None
+
+
+def _uuid_or_none(value: str) -> UUID | None:
+    try:
+        return UUID(value)
+    except ValueError:
+        return None

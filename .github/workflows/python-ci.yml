@@ -155,12 +155,63 @@ jobs:
                   name: coverage-integration
                   path: coverage-data/integration.coverage
 
+    backoffice-ui:
+        name: Backoffice UI
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version-file: ".python-version"
+
+            - name: Set up uv
+              uses: astral-sh/setup-uv@v7
+              with:
+                  enable-cache: true
+
+            - name: Sync workspace
+              run: uv sync --frozen --all-packages --group integration --group ui --group coverage
+
+            - name: Install Chromium
+              run: uv run --frozen --group ui playwright install --with-deps chromium
+
+            - name: Run Backoffice UI tests
+              run: |
+                  mkdir -p coverage-data test-results
+                  uv run --frozen --all-packages --group integration --group ui --group coverage \
+                    coverage run -m pytest \
+                      tests/integration/test_config_registry_backoffice_ui.py \
+                      -m integration_backoffice_ui \
+                      --browser chromium \
+                      --tracing retain-on-failure \
+                      --screenshot only-on-failure \
+                      --output test-results
+                  mv .coverage coverage-data/backoffice-ui.coverage
+
+            - name: Upload Playwright failure artifacts
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: test-results-backoffice-ui
+                  path: test-results/
+
+            - name: Upload coverage data
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-backoffice-ui
+                  path: coverage-data/backoffice-ui.coverage
+
     coverage:
         name: Coverage
         runs-on: ubuntu-latest
         needs:
             - test
             - integration
+            - backoffice-ui
         permissions:
             contents: write
 
