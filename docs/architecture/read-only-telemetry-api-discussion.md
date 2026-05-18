@@ -46,11 +46,16 @@ Ownership должен быть явным:
 
 - `GET /health`
 - `GET /ready`
-- `GET /v1/tenants/{tenant_id}/telemetry/latest`
-- `GET /v1/tenants/{tenant_id}/telemetry/history`
+- `GET /v1/tenants/{tenant_code}/telemetry/latest`
+- `GET /v1/tenants/{tenant_code}/telemetry/history`
 
-До отдельного решения по auth/RBAC `tenant_id` остается явным local/dev input, а
-не результатом аутентифицированного контекста.
+До отдельного решения по auth/RBAC `tenant_code` остается явным local/dev API
+input, а не результатом аутентифицированного контекста.
+
+API/backoffice/domain surfaces используют public codes (`tenant_code`,
+`asset_code`, `agent_code`, `source_code`, `point_code`). `tenant_id` остается
+wire/storage identity для Edge/Kafka/MQTT/ClickHouse contracts и не
+переименовывается этим обсуждением.
 
 Минимальный V1 scope:
 
@@ -65,7 +70,7 @@ Ownership должен быть явным:
 - alarm lifecycle, acknowledgements, rules, notifications;
 - config rollout или любые `Config Registry` writes;
 - Web Monitoring UI;
-- RBAC/JWT кроме явного local/dev `tenant_id`;
+- RBAC/JWT кроме явного local/dev `tenant_code`;
 - write/control path в промышленный контур.
 
 ## Вопросы для встречи
@@ -85,8 +90,9 @@ Ownership должен быть явным:
 
 - Query views удобны для первого contract и проверки semantics, но не являются
   production performance optimization.
-- Явный `tenant_id` ускоряет local/dev slice, но должен быть заменен
-  authenticated tenant context после решения по IAM/RBAC.
+- Явный `tenant_code` ускоряет local/dev API slice, но должен быть заменен
+  authenticated tenant context после решения по IAM/RBAC. На ClickHouse/Kafka
+  boundary он мапится к storage/wire `tenant_id`.
 - Отдельный read API service добавляет новый backend deployable, зато не
   смешивает ownership с `Config Registry`.
 - Если в V1 добавить alarm или config rollout, slice станет шире и потеряет

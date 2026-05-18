@@ -19,8 +19,8 @@ views 'Developed Systems / Industrial Data Platform' {
     }
 
     view c3-idp-config-registry-catalog of industrial-data-platform.idp-config-registry {
-        title 'C3 idp_config_registry Catalog Placement'
-        description 'Размещение Hierarchical Catalog V1 внутри idp_config_registry: Catalog является компонентом Config Registry / Platform Store slice, а не отдельным runtime service. Internal Backoffice UI учитывается как обязательная surface после issue #21; Web Monitoring читает catalog metadata через C2 boundary idp_config_registry.'
+        title 'C3 idp_config_registry Candidate Catalog Placement'
+        description 'Candidate embedded placement для Hierarchical Catalog V1 внутри idp_config_registry по ADR-015. Это не accepted decision: отдельный Catalog service/package остается жизнеспособной альтернативой. Internal Backoffice UI учитывается как обязательная surface после issue #21; Web Monitoring dependency зависит от выбранной runtime boundary.'
 
         include *
         include industrial-data-platform.platform-store

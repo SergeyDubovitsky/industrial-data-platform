@@ -5,8 +5,9 @@
 
 Этот документ является коротким operational snapshot для людей и AI-agent.
 Он описывает текущее состояние системы без истории решений. Активные решения
-сведены в `docs/architecture/decisions.md`; полные ADR остаются архивным
-rationale в `docs/architecture/adrs/archive/`.
+сведены в `docs/architecture/decisions.md`; принятые исторические ADR остаются
+архивным rationale в `docs/architecture/adrs/archive/`, а proposed ADR могут
+жить рядом с `docs/architecture/adrs/README.md` до решения команды.
 
 ## Статус MVP
 
@@ -97,11 +98,12 @@ surface как первый `Web Monitoring Module` surface.
   data-platform backend: authn/authz, richer revision workflow, rollout controls,
   approval/publish process и API boundaries beyond current internal/backoffice
   scope.
-- `Hierarchical Catalog V1` вынесен в working-plan как следующий слой навигации
+- `Hierarchical Catalog V1` вынесен в working-plan как candidate слой навигации
   и представления поверх registry entities: один default tree на tenant,
   произвольно вложенные catalog nodes, references на assets/agents/sources/points
-  через public codes и обязательный internal `/backoffice` surface. Это часть
-  будущего `Config Registry`/`Platform Store` slice, не отдельный service в V1.
+  через public codes и обязательный internal `/backoffice` surface. Runtime
+  placement остается открытым: embedded slice внутри `Config Registry` или
+  отдельный Catalog service/package сравниваются в proposed ADR-015.
 - Tenant-facing UI для редактирования agent runtime/source config. На текущем этапе
   source of truth уже переехал в `Config Registry`/`PostgreSQL`, а versioned
   YAML bundle остается import/bootstrap path; полноценный внешний UI и workflow
@@ -156,7 +158,7 @@ surface как первый `Web Monitoring Module` surface.
 | --- | --- |
 | Текущий снимок системы | `docs/architecture/current-state.md` |
 | Активные архитектурные решения | `docs/architecture/decisions.md` |
-| История решений и trade-off | `docs/architecture/adrs/archive/` |
+| Proposed/исторические ADR и trade-off | `docs/architecture/adrs/`, `docs/architecture/adrs/archive/` |
 | Карта систем и контейнеров | `arch/likec4/` |
 | Термины | `docs/architecture/glossary.md` |
 | Открытые вопросы | `docs/architecture/open-questions.md` |
@@ -206,10 +208,10 @@ ADR объясняет решение, но не заменяет contract regis
 - concrete `VK Cloud` vs `Yandex Cloud` choice, managed-service packaging and
   secrets backend for the cloud-first pilot;
 - production host/deployment model для edge runtime;
-- candidate `Hierarchical Catalog V1` implementation для `Config Registry` и
-  internal `/backoffice`: working plan уже описан в
-  `docs/architecture/hierarchical-catalog-v1.md`, но еще не принят как
-  `decisions.md` entry;
+- candidate `Hierarchical Catalog V1` runtime boundary: embedded Config Registry
+  slice или отдельный Catalog service/package. Working plan описан в
+  `docs/architecture/hierarchical-catalog-v1.md`, comparison вынесен в
+  proposed ADR-015, решение еще не принято как `decisions.md` entry;
 - кандидат для следующего Industrial Data Platform / Web Monitoring обсуждения: нужен ли
   read-only `latest/history` API поверх существующих ClickHouse views
   `telemetry_latest_v1` и `telemetry_events_dedup_v1`; это отдельная

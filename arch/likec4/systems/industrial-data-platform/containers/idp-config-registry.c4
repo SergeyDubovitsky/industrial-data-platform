@@ -1,20 +1,20 @@
 model {
     extend industrial-data-platform {
         idp-config-registry = container 'idp_config_registry' {
-            description 'Первый backend-срез Config Registry из apps/idp_config_registry: хранит tenants, assets, agents, sources, points, Hierarchical Catalog V1 working-plan state и agent runtime/source config revisions в PostgreSQL. Auth, alarm, telemetry read API и frontend boundary фиксируются отдельными ADR.'
+            description 'Первый backend-срез Config Registry из apps/idp_config_registry: хранит tenants, assets, agents, sources, points и agent runtime/source config revisions в PostgreSQL. Catalog runtime boundary обсуждается в ADR-015; embedded placement ниже показан как candidate C3 view, не accepted decision. Auth, alarm, telemetry read API и frontend boundary фиксируются отдельными ADR.'
             technology 'apps/idp_config_registry / FastAPI async / SQLAlchemy / PostgreSQL'
             icon bootstrap:server
 
             config-registry-api = component 'Config Registry API / Use Cases' {
-                description 'FastAPI/application use case boundary для registry entities, config rendering и future Catalog V1 API. Использует public codes в HTTP/domain surface.'
+                description 'FastAPI/application use case boundary для registry entities и config rendering. Может включить future Catalog V1 API только если ADR-015 выбирает embedded placement. Использует public codes в HTTP/domain surface.'
                 technology 'FastAPI routers / application use cases'
                 icon bootstrap:braces
 
-                -> hierarchical-catalog 'Expose candidate Catalog tree/node API поверх tenant public codes'
+                -> hierarchical-catalog 'Candidate embedded Catalog tree/node API поверх tenant public codes'
             }
 
             hierarchical-catalog = component 'Hierarchical Catalog V1' {
-                description 'Working-plan компонент внутри Config Registry: default catalog tree на tenant, catalog nodes, references на assets/agents/sources/points и recursive tree/subtree reads. Не является отдельным deployable service.'
+                description 'Candidate ADR-015 embedded placement: default catalog tree на tenant, catalog nodes, references на assets/agents/sources/points и recursive tree/subtree reads. Отдельный Catalog service/package остается жизнеспособной альтернативой.'
                 technology 'PostgreSQL adjacency list / recursive SQL CTE / public code refs'
                 icon bootstrap:diagram-3
 
@@ -22,11 +22,11 @@ model {
             }
 
             backoffice-admin-ui = component 'Backoffice Admin UI' {
-                description 'Internal SQLAdmin surface для operator/service workflows. Для Catalog должен использовать application use cases и UUID-to-public-code bridge, как registry backoffice после issue #21.'
+                description 'Internal SQLAdmin surface для operator/service workflows. Если Catalog выбирает embedded placement, должен использовать application use cases и UUID-to-public-code bridge, как registry backoffice после issue #21.'
                 technology 'SQLAdmin / internal_mode / Playwright-covered browser workflow'
                 icon bootstrap:window-sidebar
 
-                -> hierarchical-catalog 'Управляет Catalog Tree / Catalog Node views через public codes'
+                -> hierarchical-catalog 'Candidate Catalog Tree / Catalog Node views через public codes'
             }
 
             config-rendering = component 'Config Rendering / Outbox Boundary' {
@@ -37,7 +37,7 @@ model {
                 -> platform-store 'Пишет rendered config revisions и config_outbox'
             }
 
-            -> platform-store 'Читает и изменяет tenants, assets, agents, sources, points, catalog trees/nodes и config revisions в PostgreSQL'
+            -> platform-store 'Читает и изменяет tenants, assets, agents, sources, points и config revisions в PostgreSQL; catalog trees/nodes только если ADR-015 выбирает embedded placement'
         }
     }
 }
