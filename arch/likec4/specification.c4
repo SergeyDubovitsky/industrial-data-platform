@@ -20,6 +20,13 @@ specification {
         }
     }
 
+    element component {
+        notation 'Компонент'
+        style {
+            color amber
+        }
+    }
+
     element developed-system {
         notation 'Система в scope реализации'
         style {

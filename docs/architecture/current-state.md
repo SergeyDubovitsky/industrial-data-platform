@@ -5,8 +5,9 @@
 
 Этот документ является коротким operational snapshot для людей и AI-agent.
 Он описывает текущее состояние системы без истории решений. Активные решения
-сведены в `docs/architecture/decisions.md`; полные ADR остаются архивным
-rationale в `docs/architecture/adrs/archive/`.
+сведены в `docs/architecture/decisions.md`; принятые исторические ADR остаются
+архивным rationale в `docs/architecture/adrs/archive/`, а proposed ADR могут
+жить рядом с `docs/architecture/adrs/README.md` до решения команды.
 
 ## Статус MVP
 
@@ -97,6 +98,13 @@ surface как первый `Web Monitoring Module` surface.
   data-platform backend: authn/authz, richer revision workflow, rollout controls,
   approval/publish process и API boundaries beyond current internal/backoffice
   scope.
+- `Hierarchical Catalog V1` вынесен в working-plan как candidate
+  navigation/authoring tree поверх registry entities: один default tree на
+  tenant, произвольно вложенные catalog nodes и references на
+  assets/agents/sources/points через public codes. Он намеренно отделен от
+  будущего `Digital Twin Registry` / `Asset Graph Registry`, где появятся
+  arbitrary attributes, non-tree relations и telemetry bindings. Runtime
+  placement остается открытым и сравнивается в draft ADR-015.
 - Tenant-facing UI для редактирования agent runtime/source config. На текущем этапе
   source of truth уже переехал в `Config Registry`/`PostgreSQL`, а versioned
   YAML bundle остается import/bootstrap path; полноценный внешний UI и workflow
@@ -151,7 +159,7 @@ surface как первый `Web Monitoring Module` surface.
 | --- | --- |
 | Текущий снимок системы | `docs/architecture/current-state.md` |
 | Активные архитектурные решения | `docs/architecture/decisions.md` |
-| История решений и trade-off | `docs/architecture/adrs/archive/` |
+| Proposed/исторические ADR и trade-off | `docs/architecture/adrs/`, `docs/architecture/adrs/archive/` |
 | Карта систем и контейнеров | `arch/likec4/` |
 | Термины | `docs/architecture/glossary.md` |
 | Открытые вопросы | `docs/architecture/open-questions.md` |
@@ -176,8 +184,9 @@ surface как первый `Web Monitoring Module` surface.
    `docs/architecture/decisions.md` и LikeC4.
 7. Для storage/platform design: `docs/contracts/clickhouse/` и
    `docs/contracts/kafka/`.
-8. Для backend хранения настроек платформы: `apps/idp_config_registry/README.md`
-   и `docs/contracts/edge-telemetry-agent/config-revision-model.md`.
+8. Для backend хранения настроек платформы: `apps/idp_config_registry/README.md`,
+   `docs/contracts/edge-telemetry-agent/config-revision-model.md` и
+   `docs/architecture/hierarchical-catalog-v1.md`.
 9. Для deployment parity, cloud-first pilot, `OPC UA` read-only track и internal
    execution backlog: этот документ, `solution-architecture.md` и
    `open-questions.md`.
@@ -199,4 +208,15 @@ ADR объясняет решение, но не заменяет contract regis
   authoring workflow;
 - concrete `VK Cloud` vs `Yandex Cloud` choice, managed-service packaging and
   secrets backend for the cloud-first pilot;
-- production host/deployment model для edge runtime.
+- production host/deployment model для edge runtime;
+- candidate `Hierarchical Catalog V1` vs future `Digital Twin Registry` /
+  `Asset Graph Registry`: сначала нужно выбрать scope (navigation tree или
+  twin/asset graph), затем runtime boundary. Working plan описан в
+  `docs/architecture/hierarchical-catalog-v1.md`, comparison вынесен в draft
+  ADR-015, решение еще не принято как `decisions.md` entry;
+- кандидат для следующего Industrial Data Platform / Web Monitoring обсуждения: нужен ли
+  read-only `latest/history` API поверх существующих ClickHouse views
+  `telemetry_latest_v1` и `telemetry_events_dedup_v1`; это отдельная
+  tenant-facing read API boundary, не расширение `Config Registry`, и она не
+  включает UI, alarm workflow, RBAC или write-back/control. Материал к обсуждению:
+  `docs/architecture/read-only-telemetry-api-discussion.md`.

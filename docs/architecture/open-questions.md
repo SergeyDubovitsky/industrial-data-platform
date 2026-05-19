@@ -46,8 +46,8 @@
   `Platform Store`, `Config Registry` и shared IAM остается следующей фазой
   развития поверх текущего `MVP`.
 - `Web Monitoring Module` и `Alarm Management Module` развиваются как отдельные
-  модули поверх data platform; старый `Monitoring & Alarm Platform` больше не
-  используется как имя центральной системы.
+  модули поверх data platform; прежнее имя центральной системы больше не
+  используется.
 
 ## Что принято в рабочих материалах по пилоту `KNX -> OPC`
 
@@ -81,8 +81,59 @@
 
 ## Следующий срез Industrial Data Platform и модулей
 
+`Hierarchical Catalog V1` вынесен в отдельный working plan:
+`docs/architecture/hierarchical-catalog-v1.md`. Runtime placement намеренно
+оставлен открытым и вынесен в proposed
+`docs/architecture/adrs/ADR-015-hierarchical-catalog-runtime-boundary.md`:
+embedded slice внутри `Config Registry`, отдельный Catalog service/package или
+shared library как вспомогательная техника после выбора runtime owner. Это еще
+не accepted decision и не запись в `decisions.md`.
+
+Важно не смешивать два use case: `Hierarchical Catalog V1` как
+navigation/authoring tree и future `Digital Twin Registry` / `Asset Graph
+Registry` как объектную модель реального мира с arbitrary attributes,
+non-tree relations и telemetry bindings. Если первый implementation target
+включает связь `source.point` / `point_code` / telemetry series ->
+`twin.attribute`, unit, quality/status semantics или computed attributes, это
+уже не простой Catalog V1.
+
+Кандидат для ближайшего совместного обсуждения Industrial Data Platform / Web Monitoring:
+решить, должен ли первый срез после `Config Registry` быть read-only
+`latest/history` telemetry API поверх уже существующих ClickHouse read models
+`telemetry_latest_v1` и `telemetry_events_dedup_v1`. Материал к обсуждению для
+встречи: `docs/architecture/read-only-telemetry-api-discussion.md`.
+
+Если команда выбирает этот путь, следующее архитектурное решение должно
+зафиксировать отдельную tenant-facing read API boundary для `Web Monitoring
+Module`, а не расширять `Config Registry` до telemetry/alarm API. Возможный
+local/dev API surface для обсуждения:
+
+- `GET /health`
+- `GET /ready`
+- `GET /v1/tenants/{tenant_code}/telemetry/latest`
+- `GET /v1/tenants/{tenant_code}/telemetry/history`
+
+До отдельного auth/RBAC решения `tenant_code` в этом candidate API surface
+является явным local/dev input, а не результатом аутентифицированного контекста.
+API/backoffice/domain используют `*_code`; `tenant_id` остается wire/storage
+identity для Edge/Kafka/MQTT/ClickHouse.
+
+Alarm workflow обсуждается рядом, но остается отдельным slice и будущим
+решением `Alarm Management Module`: минимальный lifecycle (`active/raised`,
+`acknowledged`, `cleared/resolved`, `severity`) уже обозначен в рабочих
+материалах, но rule types, PostgreSQL current state, writer в
+`alarm_history_events_v1`, operator workflow и notification policy еще не
+зафиксированы. Operator UI, config rollout, auth/RBAC и write-back/control
+также остаются отдельными открытыми вопросами.
+
 | Вопрос | Почему это важно | Степень блокировки |
 | --- | --- | --- |
+| Первый implementation target — `Hierarchical Catalog V1` как navigation tree или `Digital Twin Registry` / `Asset Graph Registry` как объектная модель? | Эти use case требуют разной модели: дерево `folder`/`*_ref` достаточно для навигации, но twin-layer требует arbitrary attributes, telemetry bindings, unit/quality semantics и non-tree relations | Критично |
+| Какой runtime owner выбираем после выбора scope: embedded slice внутри `Config Registry` или отдельный Catalog/Twin service/package? | Отдельный сервис технически реалистичен уже сейчас; решение должно опираться на ownership, source of truth, consistency, consumers и future Web Monitoring/Alarms dependency | Высокая |
+| Нужны ли telemetry bindings в первом slice: `source.point` / `point_code` / telemetry series -> `twin.attribute`? | Без binding слой останется UI-деревом над registry rows; с binding он становится частью semantic enrichment и влияет на read API, alarm rules, unit/quality/status semantics и storage/API model | Высокая |
+| Какие non-tree relation types нужны target graph: `partOf`, `locatedIn`, `connectedTo`, `feeds`, `poweredBy`, `measures`, `controls`? | Adjacency tree подходит для V1 projection, но цифровой двойник почти наверняка потребует graph semantics и несколько представлений | Средняя |
+| Нужно ли мапиться на Brick/Haystack/RealEstateCore для smart-building domain или оставить собственную минимальную vocabulary до пилота? | Готовые building ontologies уже различают assets, points, sensors/commands/setpoints и relations; слепая собственная модель может осложнить интеграции | Средняя |
+| Какие источники первыми создают catalog nodes: ручной `/backoffice`, synthetic generator, ETS/KNX import или будущий OPC UA importer? | V1 может хранить дерево независимо от importer-а, но acceptance сценарий должен выбрать первый workflow наполнения | Средняя |
 | Какие конкретные API/use cases входят в первый tenant-facing API после `Config Registry`: telemetry read, config rollout, Web Monitoring read API или Alarm Management workflow API? | Data platform, Web Monitoring и Alarm Management разделены, поэтому следующий API contract должен явно назвать ownership | Высокая |
 | Где фиксируется `Redpanda Connect` pipeline config: в platform repository, IaC, Redpanda Cloud-managed pipeline или отдельном operations bundle? | MQTT input, mapping/transform и redpanda output становятся частью production data path, поэтому конфигурация pipeline должна быть версионирована и управляться так же строго, как edge source config | Высокая |
 | Нужно ли переходить с локального `Apache Kafka` broker runtime на `Redpanda broker`? | Apache Kafka остается локальным baseline; Redpanda broker требует отдельный compatibility PoC, чтобы не смешивать broker migration с connector/runtime cleanup | Средняя |

@@ -17,4 +17,25 @@ views 'Developed Systems / Industrial Data Platform' {
             edge-telemetry-agent, service-engineer
         }
     }
+
+    view c3-idp-config-registry-catalog of industrial-data-platform.idp-config-registry {
+        title 'C3 idp_config_registry Candidate Catalog Placement'
+        description 'Candidate embedded placement для Hierarchical Catalog V1 внутри idp_config_registry по ADR-015. Это не accepted decision: отдельный Catalog service/package остается жизнеспособной альтернативой. Internal Backoffice UI учитывается как обязательная surface после issue #21; Web Monitoring dependency зависит от выбранной runtime boundary.'
+
+        include *
+        include industrial-data-platform.platform-store
+        include service-engineer
+
+        style industrial-data-platform.idp-config-registry {
+            color primary
+        }
+
+        rank source {
+            service-engineer
+        }
+
+        rank sink {
+            industrial-data-platform.platform-store
+        }
+    }
 }

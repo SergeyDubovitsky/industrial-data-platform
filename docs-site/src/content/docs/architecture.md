@@ -24,6 +24,11 @@ The current system boundary is:
 - `docs/architecture/glossary.md`: canonical terms and boundaries.
 - `docs/architecture/open-questions.md`: live unresolved product and operations
   decisions.
+- `docs/architecture/hierarchical-catalog-v1.md`: working plan for the
+  navigation/authoring catalog capability.
+- `docs/architecture/adrs/ADR-015-hierarchical-catalog-runtime-boundary.md`:
+  draft proposal comparing Catalog V1 with the future Digital Twin / Asset Graph
+  boundary. It is not accepted until listed in `decisions.md`.
 - `arch/README.md`: LikeC4 model entrypoint and commands.
 
 ## Rules

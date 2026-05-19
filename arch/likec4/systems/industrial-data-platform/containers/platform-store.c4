@@ -1,7 +1,7 @@
 model {
     extend industrial-data-platform {
         platform-store = container 'Platform Store' {
-            description 'Transactional PostgreSQL store ядра данных: persistence для idp_config_registry, конфигурация объектов, агентов, источников и точек, shared module state, audit и persistence Keycloak.'
+            description 'Transactional PostgreSQL store ядра данных: persistence для idp_config_registry, конфигурация объектов, агентов, источников, точек, shared module state, audit и persistence Keycloak. Catalog/Twin storage ownership не принят и обсуждается в draft ADR-015.'
             technology 'PostgreSQL / transactional platform store'
             icon tech:postgresql
             style {
